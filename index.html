@@ -567,14 +567,14 @@
     // SISTEM KEAMANAN (PIN)
     // ==========================================
     document.addEventListener("DOMContentLoaded", () => {
-      if (sessionStorage.getItem("auth_tracker") === "verified") {
+      if (localStorage.getItem("auth_tracker") === "verified") {
         document.getElementById("pinOverlay").style.display = "none";
       }
 
       document.getElementById("btnPin").addEventListener("click", () => {
         const input = document.getElementById("pinInput").value;
         if (input === PIN_RAHASIA) {
-          sessionStorage.setItem("auth_tracker", "verified");
+          localStorage.setItem("auth_tracker", "verified");
           document.getElementById("pinOverlay").style.opacity = "0";
           setTimeout(() => document.getElementById("pinOverlay").style.display = "none", 400);
         } else {
