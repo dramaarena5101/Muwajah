@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Universal QR Label Generator</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #ccfbf1;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f1f5f9; 
+            margin: 0; 
+            padding: 20px; 
+            color: #1e293b;
+        }
+        .no-print { 
+            display: block; 
+            margin-bottom: 30px; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h2 { margin-top: 0; color: var(--primary); }
+        .instructions {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            padding: 15px; 
+            font-family: monospace; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            box-sizing: border-box;
+            background: #f8fafc;
+            resize: vertical;
+        }
+        textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1); }
+        
+        .config-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none; /* Disembunyikan sebelum paste */
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+        select, input[type="text"] {
+            padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 14px;
+        }
+        
+        .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { 
+            padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; 
+            cursor: pointer; font-size: 15px; font-weight: 600; transition: opacity 0.2s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-print { background: #2563eb; }
+        .btn-clear { background: #ef4444; }
+        
+        /* Render Layout */
+        #printArea {
+            max-width: 210mm;
+            margin: 0 auto;
+        }
+
+        .group-section {
+            margin-bottom: 30px;
+        }
+        .group-title {
+            background: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .page {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            align-items: start;
+        }
+
+        /* Label Card Style */
+        .label-card {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            page-break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 90mm;
+            height: 55mm;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .label-qr {
+            width: 90px; height: 90px; flex-shrink: 0; background: #fff; padding: 4px; border: 1px solid #e2e8f0; border-radius: 8px;
+        }
+        .label-qr img { width: 100%; height: 100%; display: block; }
+
+        .label-info { flex-grow: 1; overflow: hidden; }
+        .label-info h4 { margin: 0 0 6px 0; font-size: 15px; line-height: 1.2; color: #0f172a; word-wrap: break-word; }
+        .label-info p { margin: 3px 0; font-size: 12px; line-height: 1.3; color: #475569; word-wrap: break-word; }
+        .label-info .highlight {
+            font-weight: 700; color: var(--primary); font-size: 14px; letter-spacing: 0.5px;
+            background: var(--primary-light); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px;
+        }
+
+        /* Print Specifics */
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+            #printArea { max-width: 100%; }
+            .page { width: 100%; padding: 0; margin: 0; gap: 10px; display: grid; grid-template-columns: repeat(2, 1fr); }
+            .label-card { border: 1px solid #000; box-shadow: none; border-radius: 8px; break-inside: avoid; }
+            .group-title { background: transparent; color: #000; border-bottom: 2px solid #000; padding: 0 0 5px 0; border-radius: 0; }
+            .page-break { page-break-before: always; }
+            @page { size: A4 portrait; margin: 10mm; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <h2>🖨️ Universal Label & QR Generator</h2>
+        
+        <div class="instructions">
+            <strong>Cara Penggunaan:</strong><br>
+            1. Copy data dari Excel/Sheets <b>PASTIKAN MENG-COPY BARIS JUDULNYA (HEADER) JUGA</b>.<br>
+            2. Paste ke kotak teks di bawah. Sistem akan otomatis mendeteksi kolom Anda.<br>
+            3. Atur pemetaan kolom, pengelompokan (Grouping), dan pengurutan (Sorting) sesuai kebutuhan Anda.<br>
+            4. Klik Generate dan Print (Ctrl+P).
+        </div>
+
+        <textarea id="dataInput" oninput="parseHeaders()" placeholder="Paste data beserta Judul Kolom (Header) di sini..."></textarea>
+        
+        <!-- Panel Konfigurasi -->
+        <div class="config-panel" id="configPanel">
+            <h4 style="margin-top:0; margin-bottom:15px; color:#334155;">Pengaturan Kartu (Mapping)</h4>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Isi QR Code (Wajib)</label>
+                    <select id="mapQR"></select>
+                </div>
+                <div class="form-group">
+                    <label>Judul Utama (Nama)</label>
+                    <select id="mapTitle"></select>
+                </div>
+                <div class="form-group">
+                    <label>Info Sorotan (Kiri Atas)</label>
+                    <select id="mapHighlight"><option value="">-- Kosong --</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Baris Info 1</label>
+                    <select id="mapInfo1"><option value="">-- Kosong --</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Baris Info 2</label>
+                    <select id="mapInfo2"><option value="">-- Kosong --</option></select>
+                </div>
+            </div>
+
+            <h4 style="margin-top:10px; margin-bottom:15px; color:#334155; border-top: 1px solid #e2e8f0; padding-top:15px;">Pengaturan Grup & Urutan</h4>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Group Berdasarkan</label>
+                    <select id="mapGroup"><option value="">-- Tidak Digrup --</option></select>
+                </div>
+                <div class="form-group">
+                    <label>Urutkan (Sort) Berdasarkan</label>
+                    <select id="mapSort"><option value="">-- Tanpa Urutan --</option></select>
+                </div>
+                <div class="form-group" style="justify-content: flex-end;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #0f172a;">
+                        <input type="checkbox" id="pageBreakPerGroup" checked style="width: 18px; height: 18px;">
+                        Pisahkan Halaman Tiap Grup (Print)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+                <label>Pola URL Custom (Opsional)</label>
+                <div style="font-size: 11px; color: #64748b; margin-bottom: 5px;">Jika kolom QR Anda berisi ID/Stambuk, Anda bisa merakit link otomatis disini. Gunakan <code>{kolom_anda}</code>. Kosongkan jika kolom QR sudah berupa link jadi. Contoh: <code>https://web.com/?id={Stambuk}</code></div>
+                <input type="text" id="customUrl" placeholder="Contoh: https://dramaarena5101.github.io/Muwajah/?stambuk={Stambuk}&nama={Nama}">
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="generateLabels()">✨ Generate Label</button>
+                <button class="btn btn-print" onclick="window.print()">🖨️ Print (Ctrl+P)</button>
+                <button class="btn btn-clear" onclick="clearAll()">🗑️ Bersihkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container for Render -->
+    <div id="printArea"></div>
+
+    <script>
+        let parsedHeaders = [];
+        let parsedData = [];
+
+        function parseHeaders() {
+            const input = document.getElementById('dataInput').value.trim();
+            if (!input) {
+                document.getElementById('configPanel').style.display = 'none';
+                return;
+            }
+
+            const rows = input.split('\n');
+            if (rows.length === 0) return;
+
+            // Baris pertama diasumsikan sebagai header
+            parsedHeaders = rows[0].split('\t').map(c => c.trim());
+            
+            // Populasikan ke select options
+            const selects = ['mapQR', 'mapTitle', 'mapHighlight', 'mapInfo1', 'mapInfo2', 'mapGroup', 'mapSort'];
+            
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                // Simpan value sebelumnya jika ada
+                const oldVal = el.value;
+                
+                // Clear options kecuali option pertama jika ada
+                Array.from(el.options).forEach((opt, i) => { if(opt.value !== "") el.remove(i); });
+                el.innerHTML = id.includes('mapQR') || id.includes('mapTitle') ? '' : '<option value="">-- Kosong --</option>';
+
+                parsedHeaders.forEach(header => {
+                    if(header) {
+                        const option = document.createElement('option');
+                        option.value = header;
+                        option.text = header;
+                        el.appendChild(option);
+                    }
+                });
+
+                // Auto-select logika pintar
+                if (oldVal && parsedHeaders.includes(oldVal)) {
+                    el.value = oldVal;
+                } else {
+                    // Smart guesses
+                    const hLower = parsedHeaders.map(h => h.toLowerCase());
+                    if (id === 'mapQR') {
+                        const idx = hLower.findIndex(h => h.includes('link') || h.includes('qr') || h.includes('url'));
+                        if (idx !== -1) el.selectedIndex = idx;
+                    } else if (id === 'mapTitle') {
+                        const idx = hLower.findIndex(h => h.includes('nama'));
+                        if (idx !== -1) el.selectedIndex = idx;
+                    } else if (id === 'mapHighlight') {
+                        const idx = hLower.findIndex(h => h.includes('stambuk') || h.includes('id') || h.includes('nim') || h.includes('nis'));
+                        if (idx !== -1) el.value = parsedHeaders[idx];
+                    } else if (id === 'mapInfo1') {
+                        const idx = hLower.findIndex(h => h.includes('kelas'));
+                        if (idx !== -1) el.value = parsedHeaders[idx];
+                    } else if (id === 'mapGroup') {
+                        const idx = hLower.findIndex(h => h.includes('kelas') || h.includes('daerah'));
+                        if (idx !== -1) el.value = parsedHeaders[idx];
+                    } else if (id === 'mapSort') {
+                        const idx = hLower.findIndex(h => h.includes('nama'));
+                        if (idx !== -1) el.value = parsedHeaders[idx];
+                    }
+                }
+            });
+
+            document.getElementById('configPanel').style.display = 'block';
+        }
+
+        function generateLabels() {
+            const input = document.getElementById('dataInput').value.trim();
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = ''; 
+
+            if (!input) return;
+
+            const rows = input.split('\n');
+            if (rows.length <= 1) {
+                alert('Hanya menemukan header. Pastikan Anda mencopy data barisnya juga!');
+                return;
+            }
+
+            // Extract Data ke Object Array
+            parsedData = [];
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split('\t').map(c => c.trim());
+                if (cols.length < 2) continue; // Skip baris kosong
+                
+                let rowData = {};
+                parsedHeaders.forEach((header, index) => {
+                    rowData[header] = cols[index] || '';
+                });
+                parsedData.push(rowData);
+            }
+
+            // Dapatkan Konfigurasi
+            const cfg = {
+                qr: document.getElementById('mapQR').value,
+                title: document.getElementById('mapTitle').value,
+                highlight: document.getElementById('mapHighlight').value,
+                info1: document.getElementById('mapInfo1').value,
+                info2: document.getElementById('mapInfo2').value,
+                group: document.getElementById('mapGroup').value,
+                sort: document.getElementById('mapSort').value,
+                pattern: document.getElementById('customUrl').value.trim(),
+                pageBreak: document.getElementById('pageBreakPerGroup').checked
+            };
+
+            // Sorting
+            if (cfg.sort) {
+                parsedData.sort((a, b) => a[cfg.sort].localeCompare(b[cfg.sort], undefined, {numeric: true, sensitivity: 'base'}));
+            }
+
+            // Grouping
+            let groupedData = {};
+            if (cfg.group) {
+                parsedData.forEach(row => {
+                    let gVal = row[cfg.group] || 'Lainnya';
+                    if (!groupedData[gVal]) groupedData[gVal] = [];
+                    groupedData[gVal].push(row);
+                });
+            } else {
+                groupedData['Semua Data'] = parsedData;
+            }
+
+            let qrCount = 0;
+
+            // Render per Group
+            Object.keys(groupedData).forEach((groupName, gIndex) => {
+                const section = document.createElement('div');
+                section.className = 'group-section';
+                if (gIndex > 0 && cfg.pageBreak && cfg.group) {
+                    section.classList.add('page-break');
+                }
+
+                if (cfg.group) {
+                    const titleEl = document.createElement('h3');
+                    titleEl.className = 'group-title';
+                    titleEl.innerHTML = `🗂️ ${cfg.group}: ${groupName}`;
+                    section.appendChild(titleEl);
+                }
+
+                const pageGrid = document.createElement('div');
+                pageGrid.className = 'page';
+
+                groupedData[groupName].forEach(row => {
+                    const card = document.createElement('div');
+                    card.className = 'label-card';
+
+                    const qrDiv = document.createElement('div');
+                    qrDiv.className = 'label-qr';
+                    const qrId = `qrcode-${qrCount++}`;
+                    qrDiv.id = qrId;
+
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'label-info';
+                    
+                    let htmlStr = '';
+                    if (cfg.highlight && row[cfg.highlight]) {
+                        htmlStr += `<div class="highlight">${row[cfg.highlight]}</div>`;
+                    }
+                    if (cfg.title) {
+                        htmlStr += `<h4>${row[cfg.title] || '-'}</h4>`;
+                    }
+                    if (cfg.info1 && row[cfg.info1]) {
+                        htmlStr += `<p><strong>${cfg.info1}:</strong> ${row[cfg.info1]}</p>`;
+                    }
+                    if (cfg.info2 && row[cfg.info2]) {
+                        htmlStr += `<p><strong>${cfg.info2}:</strong> ${row[cfg.info2]}</p>`;
+                    }
+                    infoDiv.innerHTML = htmlStr;
+
+                    card.appendChild(qrDiv);
+                    card.appendChild(infoDiv);
+                    pageGrid.appendChild(card);
+
+                    // Bangun QR Content
+                    let qrContent = row[cfg.qr];
+                    if (cfg.pattern) {
+                        // Replace pola {NamaKolom} dengan valuenya
+                        qrContent = cfg.pattern;
+                        parsedHeaders.forEach(h => {
+                            // global replace untuk string seperti {Stambuk}
+                            const regex = new RegExp(`{${h}}`, 'g');
+                            qrContent = qrContent.replace(regex, encodeURIComponent(row[h]));
+                        });
+                    }
+
+                    // Schedule QR Generation
+                    setTimeout(() => {
+                        new QRCode(document.getElementById(qrId), {
+                            text: qrContent,
+                            width: 128, height: 128, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
+                        });
+                    }, 0);
+                });
+
+                section.appendChild(pageGrid);
+                printArea.appendChild(section);
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('dataInput').value = '';
+            document.getElementById('printArea').innerHTML = '';
+            document.getElementById('configPanel').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
