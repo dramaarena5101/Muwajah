@@ -297,72 +297,7 @@
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
     }
 
-    /* Auth Overlay */
-    .pin-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
 
-    .pin-card {
-      background: white;
-      padding: 40px 30px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 380px;
-      text-align: center;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .pin-card h4 {
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 8px;
-    }
-
-    .pin-card p {
-      color: var(--text-muted);
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-
-    .pin-input {
-      font-size: 32px;
-      letter-spacing: 16px;
-      text-align: center;
-      border: 2px solid var(--border-color);
-      border-radius: 16px;
-      padding: 12px;
-      font-weight: 700;
-      color: var(--primary);
-    }
-
-    .pin-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
-      outline: none;
-    }
-
-    @keyframes slideUp {
-      from {
-        transform: translateY(30px);
-        opacity: 0;
-      }
-
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
 
     /* Offline Banner */
     .offline-banner {
@@ -387,19 +322,7 @@
     ⚠️ Anda sedang offline. Beberapa fitur mungkin tidak berfungsi.
   </div>
 
-  <!-- Security PIN Overlay -->
-  <div id="pinOverlay" class="pin-overlay">
-    <div class="pin-card">
-      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
-      <h4>Akses Terkunci</h4>
-      <p>Masukkan PIN Ustadz untuk mengakses sistem Muwajjah Tracker.</p>
-      <input type="password" id="pinInput" class="pin-input w-100 mb-4" placeholder="••••" maxlength="4"
-        inputmode="numeric">
-      <button id="btnPin" class="btn btn-primary w-100 py-3 rounded-4" style="font-size: 16px;">Buka Sistem</button>
-      <div id="pinError" class="text-danger mt-3 fw-medium" style="display:none; font-size:14px;">❌ PIN yang Anda
-        masukkan salah!</div>
-    </div>
-  </div>
+
 
   <div class="container py-4">
     <div class="text-center mb-5">
@@ -547,9 +470,8 @@
 
   <script>
     // ==========================================
-    // KONFIGURASI KEAMANAN & BACKEND
+    // KONFIGURASI BACKEND
     // ==========================================
-    const PIN_RAHASIA = "1234"; // SILAKAN GANTI PIN INI UNTUK PRODUKSI
     const scriptURL = "https://script.google.com/macros/s/AKfycbzFVc8hVloVet18pgc1uSVNZ95TqGYYfonrg3-QcHGC6okKhdBuZK-aswLoLyds7ik/exec";
 
     // ==========================================
@@ -563,38 +485,7 @@
       document.getElementById('offlineBanner').style.display = 'block';
     });
 
-    // ==========================================
-    // SISTEM KEAMANAN (PIN)
-    // ==========================================
-    document.addEventListener("DOMContentLoaded", () => {
-      if (localStorage.getItem("auth_tracker") === "verified") {
-        document.getElementById("pinOverlay").style.display = "none";
-      }
 
-      document.getElementById("btnPin").addEventListener("click", () => {
-        const input = document.getElementById("pinInput").value;
-        if (input === PIN_RAHASIA) {
-          localStorage.setItem("auth_tracker", "verified");
-          document.getElementById("pinOverlay").style.opacity = "0";
-          setTimeout(() => document.getElementById("pinOverlay").style.display = "none", 400);
-        } else {
-          const err = document.getElementById("pinError");
-          err.style.display = "block";
-          document.getElementById("pinInput").value = "";
-          document.getElementById("pinInput").focus();
-          // Shake effect
-          const card = document.querySelector(".pin-card");
-          card.style.transform = "translateX(10px)";
-          setTimeout(() => card.style.transform = "translateX(-10px)", 50);
-          setTimeout(() => card.style.transform = "translateX(10px)", 100);
-          setTimeout(() => card.style.transform = "translateX(0)", 150);
-        }
-      });
-
-      document.getElementById("pinInput").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") document.getElementById("btnPin").click();
-      });
-    });
 
 
     // ==========================================

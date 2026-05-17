@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <title>Laporan & Pemantauan Piket Malam</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #ea580c;
+      /* Orange Primary */
+      --primary-hover: #c2410c;
+      --primary-light: #ffedd5;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Modern Glassmorphic Header */
+    .header-panel {
+      background: white;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .main-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+    }
+
+    /* Security PIN Portal Overlay */
+    .pin-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pin-card {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pin-input {
+      font-size: 32px;
+      letter-spacing: 16px;
+      text-align: center;
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .pin-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
+      outline: none;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Premium Stats Dashboard Cards */
+    .stats-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stats-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .stats-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .stats-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Table styling for logs */
+    .guru-table-container {
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .table thead th {
+      background-color: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 18px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .table tbody td {
+      padding: 14px 18px;
+      font-size: 14px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge-status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    /* Offline Banner */
+    .offline-banner {
+      background: #ef4444;
+      color: white;
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10000;
+      display: none;
+    }
+
+    /* Loader */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+    }
+
+    /* PRINT CUSTOM RULES */
+    .print-header-report {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .header-panel,
+      .offline-banner,
+      .toast-container,
+      .loader-overlay,
+      .pin-overlay,
+      .btn,
+      .input-group,
+      .stats-row,
+      #filtersGuru {
+        display: none !important;
+      }
+
+      .main-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+
+      .print-header-report {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 25px;
+        border-bottom: 3px double #000;
+        padding-bottom: 10px;
+      }
+
+      .print-header-report h4 {
+        font-weight: 800;
+        margin: 0 0 5px 0;
+      }
+
+      .guru-table-container {
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+
+      .table thead th {
+        background-color: #f1f5f9 !important;
+        color: black !important;
+        border: 1px solid #000 !important;
+        padding: 10px !important;
+        font-size: 12px !important;
+      }
+
+      .table tbody td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        font-size: 11px !important;
+      }
+
+      .badge-status {
+        background: transparent !important;
+        color: black !important;
+        padding: 0 !important;
+        font-weight: normal !important;
+      }
+
+      .print-signature {
+        display: flex !important;
+        justify-content: space-between;
+        margin-top: 50px;
+        font-size: 12px;
+        padding: 0 30px;
+      }
+
+      .signature-block {
+        text-align: center;
+        width: 200px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Offline Banner -->
+  <div id="offlineBanner" class="offline-banner">
+    ⚠️ Anda sedang offline. Beberapa fitur visual mungkin tidak sinkron.
+  </div>
+
+  <!-- Security PIN Overlay -->
+  <div id="pinOverlay" class="pin-overlay">
+    <div class="pin-card">
+      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+      <h4 class="fw-bold">Akses Ustadz Khusus</h4>
+      <p class="text-muted" style="font-size: 14px; margin-bottom: 24px;">Masukkan PIN Ustadz untuk membuka Laporan
+        Piket Malam.</p>
+      <input type="password" id="pinInput" class="pin-input w-100 mb-4" placeholder="••••" maxlength="4"
+        inputmode="numeric">
+      <button id="btnPin" class="btn btn-primary w-100 py-3 rounded-4 fw-bold" style="font-size: 16px;"
+        onclick="verifyPin()">Buka Dashboard</button>
+      <div id="pinError" class="text-danger mt-3 fw-medium" style="display:none; font-size:14px;">❌ PIN yang Anda
+        masukkan salah!</div>
+    </div>
+  </div>
+
+  <!-- Glassmorphic Header -->
+  <header class="header-panel py-3 px-4 mb-4">
+    <div class="container d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <div style="font-size: 32px;">👨‍🏫</div>
+        <div>
+          <h5 class="mb-0 fw-bold text-dark">Portal Pemantauan Ustadz</h5>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Sistem Informasi & Laporan Piket
+            Kantor Santri</span>
+        </div>
+      </div>
+      <button class="btn btn-outline-danger btn-sm rounded-3 py-2 px-3 fw-bold" onclick="logoutGuru()">
+        🔒 Keluar
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container flex-grow-1 py-2">
+    <div class="row justify-content-center">
+      <div class="col-lg-12">
+        <div class="main-card">
+
+          <!-- PRINT REPORT HEADER (Only visible during printing) -->
+          <div class="print-header-report">
+            <h4>SISTEM INFORMASI PIKET MALAM SANTRI</h4>
+            <p style="margin: 0; font-size: 12px; color: #555;">Laporan Daftar Petugas Piket Kantor Harian Santri
+              Terpadu</p>
+            <div id="printDateReport" style="font-size: 11px; margin-top: 5px; font-weight: bold;"></div>
+          </div>
+
+          <!-- Header & Actions -->
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div>
+              <h4 class="fw-bold mb-0">Dashboard Laporan Piket</h4>
+              <p class="text-muted mb-0" style="font-size: 13px;">Riwayat pengabdian dan data absensi petugas piket
+                malam</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                onclick="fetchHistoryData()">
+                🔄 Refresh Data
+              </button>
+              <button class="btn btn-primary py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                onclick="printReport()">
+                🖨️ Cetak Laporan A4
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="row g-3 mb-4 stats-row">
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-primary" style="background: #ffedd5;">🌙</div>
+                <div>
+                  <div class="stats-val" id="statToday">0</div>
+                  <div class="stats-lbl">Petugas Hari Ini</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-success" style="background: #dcfce7;">🏘️</div>
+                <div>
+                  <div class="stats-val" id="statActiveRayon">-</div>
+                  <div class="stats-lbl">Rayon Teraktif</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-info" style="background: #e0f2fe;">📋</div>
+                <div>
+                  <div class="stats-val" id="statTotalRows">0</div>
+                  <div class="stats-lbl">Total Log Entri</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters Area -->
+          <div class="row g-3 mb-4 bg-light p-3 rounded-4" id="filtersGuru"
+            style="border: 1px solid var(--border-color); margin: 0;">
+            <div class="col-md-5">
+              <label class="form-label fw-bold text-muted" style="font-size: 11px; text-transform: uppercase;">🔍 Cari
+                Nama / Stambuk</label>
+              <input type="text" id="searchGuru" class="form-control py-2" placeholder="Ketik kata kunci pencarian..."
+                onkeyup="filterGuruTable()">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold text-muted" style="font-size: 11px; text-transform: uppercase;">🏘️
+                Filter Rayon</label>
+              <select id="rayonFilterGuru" class="form-select py-2" onchange="filterGuruTable()">
+                <option value="">Semua Rayon</option>
+                <!-- Dinamis diisi lewat JS -->
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold text-muted" style="font-size: 11px; text-transform: uppercase;">📅 Filter
+                Tanggal</label>
+              <input type="date" id="dateFilterGuru" class="form-control py-2" onchange="filterGuruTable()">
+            </div>
+          </div>
+
+          <!-- Datatable Laporan -->
+          <div class="guru-table-container mt-4">
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle" id="tablePiketGuru">
+                <thead>
+                  <tr>
+                    <th style="width: 180px;">Waktu Input</th>
+                    <th style="width: 100px;">Stambuk</th>
+                    <th>Nama Lengkap</th>
+                    <th style="width: 100px;">Kelas</th>
+                    <th style="width: 140px;">Rayon</th>
+                    <th style="width: 100px; text-align: center;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="piketHistoryBody">
+                  <!-- Dinamis diisi lewat JS -->
+                </tbody>
+              </table>
+            </div>
+            <div id="emptyTableMessage" class="text-center py-5 text-muted fw-medium" style="display:none;">
+              📭 Tidak ada data laporan yang cocok dengan filter pencarian.
+            </div>
+          </div>
+
+          <!-- PRINT SIGNATURE AREA (Only visible during printing) -->
+          <div class="print-signature" style="display: none;">
+            <div class="signature-block">
+              <p>Mengetahui,</p>
+              <br><br><br>
+              <p class="fw-bold" style="border-bottom: 1px solid #000; padding-bottom: 2px;">(
+                .................................... )</p>
+              <p style="font-size: 10px; margin-top: -5px;">Ustadz Piket Harian</p>
+            </div>
+            <div class="signature-block">
+              <p>Bagian Keamanan,</p>
+              <br><br><br>
+              <p class="fw-bold" style="border-bottom: 1px solid #000; padding-bottom: 2px;">(
+                .................................... )</p>
+              <p style="font-size: 10px; margin-top: -5px;">Penanggung Jawab</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div id="loader" class="loader-overlay" style="display:none;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem; border-width: 4px;"></div>
+    <span class="fw-bold" id="loaderText" style="color: var(--text-main);">Memuat Laporan database...</span>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- jQuery & Bootstrap -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // =========================================================================
+    // URL Web App Google Apps Script database Piket Malam
+    // =========================================================================
+    const scriptURL = "https://script.google.com/macros/s/AKfycbw3Yy2j-9uqqfWvX4Kopp1N5D8SLu8ClYBHNIebiiOdI1Qu-nn_NgbsrZqD0bHGbAhW/exec";
+    const PIN_USTADZ = "1234";
+
+    let uniqueRayons = [];
+    let piketHistory = [];
+
+    $(document).ready(function () {
+      // Offline/Online triggers
+      window.addEventListener('online', () => {
+        $('#offlineBanner').hide();
+        showToast("Koneksi internet kembali pulih.", "success");
+      });
+      window.addEventListener('offline', () => {
+        $('#offlineBanner').show();
+      });
+
+      // Pengecekan PIN Login Permanen (localStorage)
+      if (localStorage.getItem("auth_laporan") === "verified") {
+        $('#pinOverlay').hide();
+        initializeDashboard();
+      } else {
+        $('#pinInput').focus();
+      }
+
+      // Enter key trigger login
+      $('#pinInput').on('keypress', function (e) {
+        if (e.key === "Enter") verifyPin();
+      });
+    });
+
+    // === Verifikasi PIN ===
+    function verifyPin() {
+      const input = $('#pinInput').val();
+      if (input === PIN_USTADZ) {
+        localStorage.setItem("auth_laporan", "verified");
+        $('#pinOverlay').css('opacity', '0');
+        setTimeout(() => {
+          $('#pinOverlay').hide();
+          initializeDashboard();
+        }, 400);
+      } else {
+        $('#pinError').show();
+        $('#pinInput').val('').focus();
+
+        // Shake card effect
+        const card = $('.pin-card');
+        card.css('transform', 'translateX(10px)');
+        setTimeout(() => card.css('transform', 'translateX(-10px)'), 50);
+        setTimeout(() => card.css('transform', 'translateX(10px)'), 100);
+        setTimeout(() => card.css('transform', 'translateX(0)'), 150);
+      }
+    }
+
+    // === Log Out ===
+    function logoutGuru() {
+      localStorage.removeItem("auth_laporan");
+      location.reload();
+    }
+
+    // === Inisialisasi Dashboard Utama ===
+    function initializeDashboard() {
+      fetchRayonData();
+      fetchHistoryData();
+    }
+
+    // === Ambil Data Rayon Unik ===
+    function fetchRayonData() {
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "getSantri" }),
+        contentType: 'text/plain',
+        success: function (response) {
+          if (response.error) return;
+          const rayons = [...new Set(response.map(s => s.rayon).filter(Boolean))].sort();
+          uniqueRayons = rayons;
+          populateRayonFiltersGuru();
+        }
+      });
+    }
+
+    // === Tampilkan Dropdown Filter Rayon ===
+    function populateRayonFiltersGuru() {
+      const select = $('#rayonFilterGuru');
+      select.find('option:not(:first)').remove();
+
+      uniqueRayons.forEach(rayon => {
+        select.append(`<option value="${rayon}">Rayon ${rayon}</option>`);
+      });
+    }
+
+    // === Ambil Riwayat Piket Malam ===
+    function fetchHistoryData() {
+      showLoader("Mengambil data riwayat piket...");
+
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "getPiketHistory" }),
+        contentType: 'text/plain',
+        success: function (response) {
+          hideLoader();
+          if (response.error) {
+            showToast("Gagal memuat laporan: " + response.error, "danger", 6000);
+            return;
+          }
+
+          piketHistory = response;
+          calculateGuruStats();
+          renderGuruTable();
+        },
+        error: function (err) {
+          hideLoader();
+          showToast("Koneksi gagal saat mengambil laporan piket.", "danger", 6000);
+        }
+      });
+    }
+
+    // === Hitung Statistik (Stats Cards) ===
+    function calculateGuruStats() {
+      $('#statTotalRows').text(piketHistory.length);
+
+      const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' })
+        .split('/').reverse().join('-');
+
+      let todayCount = 0;
+      const rayonCounts = {};
+
+      piketHistory.forEach(item => {
+        if (item.tanggal && item.tanggal.startsWith(todayStr)) {
+          todayCount++;
+        }
+        if (item.rayon) {
+          rayonCounts[item.rayon] = (rayonCounts[item.rayon] || 0) + 1;
+        }
+      });
+
+      $('#statToday').text(todayCount);
+
+      let activeRayon = "-";
+      let maxCount = 0;
+      for (const r in rayonCounts) {
+        if (rayonCounts[r] > maxCount) {
+          maxCount = rayonCounts[r];
+          activeRayon = `Rayon ${r} (${maxCount})`;
+        }
+      }
+      $('#statActiveRayon').text(activeRayon);
+    }
+
+    // === Render Tabel Riwayat Laporan ===
+    function renderGuruTable() {
+      const tbody = $('#piketHistoryBody');
+      tbody.empty();
+
+      if (piketHistory.length === 0) {
+        tbody.html(`<tr><td colspan="6" class="text-center py-5 text-muted fw-medium">📭 Belum ada riwayat piket malam tercatat di database.</td></tr>`);
+        $('#emptyTableMessage').hide();
+        return;
+      }
+
+      piketHistory.forEach(item => {
+        let displayTime = "-";
+        if (item.tanggal) {
+          try {
+            const parts = item.tanggal.split(" ");
+            const dateParts = parts[0].split("-");
+            const timeParts = parts[1] ? parts[1].substring(0, 5) : "";
+            displayTime = `${dateParts[2]}/${dateParts[1]} - ${timeParts} WIB`;
+          } catch (e) {
+            displayTime = item.tanggal;
+          }
+        }
+
+        const tr = $(`
+          <tr class="table-row-item" data-date="${item.tanggal ? item.tanggal.split(" ")[0] : ''}" data-rayon="${item.rayon}">
+            <td class="fw-medium text-secondary">${displayTime}</td>
+            <td class="fw-bold text-dark">${item.stambuk}</td>
+            <td class="fw-bold text-dark">${item.nama}</td>
+            <td>${item.kelas}</td>
+            <td><span class="badge bg-light text-dark border py-1.5 px-3 rounded-3" style="font-size:12px;">Rayon ${item.rayon}</span></td>
+            <td style="text-align: center;"><span class="badge-status">${item.status || 'Hadir'}</span></td>
+          </tr>
+        `);
+
+        tr.data('search-content', `${item.nama.toLowerCase()} ${item.stambuk.toLowerCase()} ${item.kelas.toLowerCase()}`);
+        tbody.append(tr);
+      });
+
+      filterGuruTable();
+    }
+
+    // === Filter Tabel Dinamis ===
+    function filterGuruTable() {
+      const searchVal = $('#searchGuru').val().toLowerCase();
+      const rayonVal = $('#rayonFilterGuru').val();
+      const dateVal = $('#dateFilterGuru').val();
+
+      let visibleCount = 0;
+
+      $('.table-row-item').each(function () {
+        const searchContent = $(this).data('search-content');
+        const itemRayon = $(this).data('rayon');
+        const itemDate = $(this).data('date');
+
+        const matchSearch = !searchVal || searchContent.includes(searchVal);
+        const matchRayon = !rayonVal || String(itemRayon) === String(rayonVal);
+        const matchDate = !dateVal || String(itemDate) === String(dateVal);
+
+        if (matchSearch && matchRayon && matchDate) {
+          $(this).show();
+          visibleCount++;
+        } else {
+          $(this).hide();
+        }
+      });
+
+      if (visibleCount === 0 && piketHistory.length > 0) {
+        $('#emptyTableMessage').show();
+      } else {
+        $('#emptyTableMessage').hide();
+      }
+    }
+
+    // === Cetak Laporan Roster ===
+    function printReport() {
+      const dateVal = $('#dateFilterGuru').val();
+      let printDateStr = "Semua Riwayat Entri Piket Malam";
+
+      if (dateVal) {
+        const parts = dateVal.split("-");
+        printDateStr = `Daftar Petugas Piket Tanggal: ${parts[2]}/${parts[1]}/${parts[0]}`;
+      } else {
+        printDateStr = `Dicetak Pada: ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+      }
+
+      const rayonVal = $('#rayonFilterGuru').val();
+      if (rayonVal) {
+        printDateStr += ` | Rayon: ${rayonVal}`;
+      }
+
+      $('#printDateReport').text(printDateStr);
+      window.print();
+    }
+
+    // === Loader Helper ===
+    function showLoader(text) {
+      $('#loaderText').text(text);
+      $('#loader').fadeIn(150);
+    }
+
+    function hideLoader() {
+      $('#loader').fadeOut(150);
+    }
+
+    // === Toast Notification System ===
+    function showToast(message, type = "info", duration = 3000) {
+      const id = "toast-" + Date.now();
+      const icon = type === "success" ? "✅" : (type === "danger" ? "❌" : "⚠️");
+      const toastHtml = `
+        <div id="${id}" class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'warning')} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body fw-medium py-3" style="font-size: 14px;">
+              <span class="me-2">${icon}</span> ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>
+      `;
+      $('#toastContainer').append(toastHtml);
+      const el = document.getElementById(id);
+      const t = new bootstrap.Toast(el, { delay: duration });
+      t.show();
+      el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+  </script>
+</body>
+
+</html>
