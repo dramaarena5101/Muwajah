@@ -184,13 +184,18 @@
         }
 
         .label-qr {
-            width: 130px;
-            height: 130px;
+            width: var(--qr-size, 130px);
+            height: var(--qr-size, 130px);
+            max-width: 130px;
+            max-height: 130px;
+            min-width: 60px;
+            min-height: 60px;
             flex-shrink: 0;
             background: #fff;
             padding: 4px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
+            box-sizing: border-box;
         }
 
         .label-qr img {
@@ -356,7 +361,66 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-top:10px;">
+            <h4
+                style="margin-top:15px; margin-bottom:15px; color:#334155; border-top: 1px solid #e2e8f0; padding-top:15px;">
+                ⚙️ Pengaturan Kertas & Tata Letak (Layout)</h4>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Ukuran Kertas</label>
+                    <select id="paperSize" onchange="toggleCustomPaperFields(); applyLayoutSettings();">
+                        <option value="A4" selected>A4 (210 x 297 mm)</option>
+                        <option value="F4">F4 (215 x 330 mm)</option>
+                        <option value="A3">A3 (297 x 420 mm)</option>
+                        <option value="A3_ext">A3 Extension / A3+ (329 x 483 mm)</option>
+                        <option value="custom">Custom (Tentukan Sendiri)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Orientasi</label>
+                    <select id="paperOrientation" onchange="applyLayoutSettings();">
+                        <option value="portrait" selected>Portrait (Tegak)</option>
+                        <option value="landscape">Landscape (Mendatar)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Margin Kertas (mm)</label>
+                    <input type="number" id="paperMargin" value="10" min="0" max="50" oninput="applyLayoutSettings();">
+                </div>
+                <div class="form-group">
+                    <label>Kolom Grid</label>
+                    <select id="gridCols" onchange="applyLayoutSettings();">
+                        <option value="auto">Otomatis (Fit)</option>
+                        <option value="1">1 Kolom</option>
+                        <option value="2" selected>2 Kolom</option>
+                        <option value="3">3 Kolom</option>
+                        <option value="4">4 Kolom</option>
+                        <option value="5">5 Kolom</option>
+                        <option value="6">6 Kolom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Lebar Kartu Label (mm)</label>
+                    <input type="number" id="labelWidth" value="95" min="10" max="500" oninput="applyLayoutSettings();">
+                </div>
+                <div class="form-group">
+                    <label>Tinggi Kartu Label (mm)</label>
+                    <input type="number" id="labelHeight" value="65" min="10" max="500" oninput="applyLayoutSettings();">
+                </div>
+            </div>
+
+            <!-- Custom Paper Dimensions Group -->
+            <div id="customPaperGroup" class="config-grid" style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 15px; margin-top: 10px;">
+                <div class="form-group">
+                    <label>Lebar Kertas Custom (mm)</label>
+                    <input type="number" id="customWidth" value="210" min="50" max="1000" oninput="applyLayoutSettings();">
+                </div>
+                <div class="form-group">
+                    <label>Tinggi Kertas Custom (mm)</label>
+                    <input type="number" id="customHeight" value="297" min="50" max="1000" oninput="applyLayoutSettings();">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top:15px; border-top: 1px solid #e2e8f0; padding-top:15px;">
                 <label>Pola URL Custom (Opsional)</label>
                 <div style="font-size: 11px; color: #64748b; margin-bottom: 5px;">Jika kolom QR Anda berisi ID/Stambuk,
                     Anda bisa merakit link otomatis disini. Gunakan <code>{kolom_anda}</code>. Kosongkan jika kolom QR
@@ -443,12 +507,17 @@
             });
 
             document.getElementById('configPanel').style.display = 'block';
+            toggleCustomPaperFields();
+            applyLayoutSettings();
         }
 
         function generateLabels() {
             const input = document.getElementById('dataInput').value.trim();
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
+
+            // Terapkan pengaturan tata letak dinamis
+            applyLayoutSettings();
 
             if (!input) return;
 
@@ -576,6 +645,133 @@
                 section.appendChild(pageGrid);
                 printArea.appendChild(section);
             });
+        }
+
+        function toggleCustomPaperFields() {
+            const paperSize = document.getElementById('paperSize').value;
+            const customGroup = document.getElementById('customPaperGroup');
+            if (paperSize === 'custom') {
+                customGroup.style.display = 'grid';
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+
+        function applyLayoutSettings() {
+            const paperSize = document.getElementById('paperSize').value;
+            const orientation = document.getElementById('paperOrientation').value;
+            const margin = parseFloat(document.getElementById('paperMargin').value) || 0;
+            const cols = document.getElementById('gridCols').value;
+            const labelWidth = parseFloat(document.getElementById('labelWidth').value) || 95;
+            const labelHeight = parseFloat(document.getElementById('labelHeight').value) || 65;
+
+            let width = 210;
+            let height = 297;
+
+            if (paperSize === 'A4') {
+                width = 210;
+                height = 297;
+            } else if (paperSize === 'F4') {
+                width = 215;
+                height = 330;
+            } else if (paperSize === 'A3') {
+                width = 297;
+                height = 420;
+            } else if (paperSize === 'A3_ext') {
+                width = 329;
+                height = 483;
+            } else if (paperSize === 'custom') {
+                width = parseFloat(document.getElementById('customWidth').value) || 210;
+                height = parseFloat(document.getElementById('customHeight').value) || 297;
+            }
+
+            let actualWidth = width;
+            let actualHeight = height;
+            if (orientation === 'landscape') {
+                actualWidth = height;
+                actualHeight = width;
+            }
+
+            let gridColsTemplate = '';
+            if (cols === 'auto') {
+                gridColsTemplate = `repeat(auto-fill, minmax(${labelWidth}mm, 1fr))`;
+            } else {
+                gridColsTemplate = `repeat(${cols}, 1fr)`;
+            }
+
+            let styleEl = document.getElementById('dynamic-layout-style');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-layout-style';
+                document.head.appendChild(styleEl);
+            }
+
+            styleEl.innerHTML = `
+                /* CSS Cetak Dinamis */
+                @media print {
+                    @page {
+                        size: ${actualWidth}mm ${actualHeight}mm;
+                        margin: ${margin}mm;
+                    }
+                    body {
+                        background: white;
+                        padding: 0;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                    #printArea {
+                        max-width: 100% !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        background: none !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                    }
+                    .page {
+                        width: 100% !important;
+                        display: grid !important;
+                        grid-template-columns: ${gridColsTemplate} !important;
+                        gap: 10px !important;
+                    }
+                    .label-card {
+                        --card-height: ${labelHeight}mm;
+                        --qr-size: calc(var(--card-height) - 10mm);
+                        width: ${labelWidth}mm !important;
+                        height: ${labelHeight}mm !important;
+                        border: 1.5px dashed #000 !important;
+                        box-shadow: none !important;
+                        border-radius: 8px !important;
+                        break-inside: avoid !important;
+                        page-break-inside: avoid !important;
+                    }
+                }
+
+                /* CSS Pratinjau Layar Dinamis */
+                #printArea {
+                    max-width: ${actualWidth}mm;
+                    background: white;
+                    border: 1px solid #cbd5e1;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+                    border-radius: 12px;
+                    padding: ${margin}mm;
+                    margin: 30px auto;
+                    box-sizing: border-box;
+                    transition: all 0.3s ease;
+                }
+                .page {
+                    display: grid;
+                    grid-template-columns: ${gridColsTemplate};
+                    gap: 15px;
+                    align-items: start;
+                }
+                .label-card {
+                    --card-height: ${labelHeight}mm;
+                    --qr-size: calc(var(--card-height) - 10mm);
+                    width: ${labelWidth}mm;
+                    height: ${labelHeight}mm;
+                }
+            `;
         }
 
         function clearAll() {
