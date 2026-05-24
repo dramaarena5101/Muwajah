@@ -3,6 +3,9 @@
       const req = JSON.parse(e.postData.contents);
       const action = req.action;
 
+      // Otomatis buat sheet jika tidak sengaja terhapus
+      autoSetupDatabase();
+
       if (action === "getPelajaran") return getPelajaran();
       if (action === "simpanData") return simpanData(req.data);
       if (action === "getProgress") return getProgress(req.stambuk);
@@ -13,13 +16,37 @@
     }
   }
 
+  // === Auto Setup Database ===
+  function autoSetupDatabase() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // 1. Setup "Progress Santri"
+    let shProgress = ss.getSheetByName("Progress Santri");
+    if (!shProgress) {
+      shProgress = ss.insertSheet("Progress Santri");
+      shProgress.appendRow(["Tanggal", "Stambuk", "Nama", "Kelas", "Daerah", "Ustadz", "Pelajaran", "Judul Materi", "Jenis Kegiatan"]);
+      shProgress.getRange("A1:I1").setFontWeight("bold").setBackground("#ffedd5").setFontColor("#ea580c").setHorizontalAlignment("center");
+      shProgress.setFrozenRows(1);
+    }
+
+    // 2. Setup "Data Pelajaran"
+    let shPelajaran = ss.getSheetByName("Data Pelajaran");
+    if (!shPelajaran) {
+      shPelajaran = ss.insertSheet("Data Pelajaran");
+      shPelajaran.appendRow(["ID", "Pelajaran", "Judul", "Type"]);
+      shPelajaran.getRange("A1:D1").setFontWeight("bold").setBackground("#ffedd5").setFontColor("#ea580c").setHorizontalAlignment("center");
+      shPelajaran.setFrozenRows(1);
+    }
+  }
+
   // === Ambil daftar pelajaran & judul ===
 
   function getPelajaran() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss.getSheetByName("Data Pelajaran");
+    if (!sh) return outputJSON({}); // Safety
     const data = sh.getDataRange().getValues();
-    data.shift(); // buang header
+    if (data.length > 0) data.shift(); // buang header
 
     const hasil = {};
     data.forEach(row => {
@@ -66,6 +93,9 @@ function simpanData(d) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss.getSheetByName("Progress Santri");
+    if (!sh) {
+      return outputJSON({ error: "Gagal: Sheet 'Progress Santri' tidak ditemukan." });
+    }
     const tanggal = Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd HH:mm:ss");
 
     // Pastikan d.judul adalah array id yang valid, unique
@@ -107,21 +137,24 @@ function simpanData(d) {
   function getProgress(stambuk) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss.getSheetByName("Progress Santri");
+    if (!sh) return outputJSON([]); // Safety
     const data = sh.getDataRange().getValues();
     const hasil = [];
 
-    const headers = data.shift();
-    data.forEach(row => {
-      if (row[1] == stambuk) {
-        hasil.push({
-          tanggal: row[0],
-          pelajaran: row[6],
-          judul: row[7],
-          jenis: row[8],
-          materi: row[9]
-        });
-      }
-    });
+    if (data.length > 0) {
+      const headers = data.shift();
+      data.forEach(row => {
+        if (row[1] == stambuk) {
+          hasil.push({
+            tanggal: row[0],
+            pelajaran: row[6],
+            judul: row[7],
+            jenis: row[8],
+            materi: row[9]
+          });
+        }
+      });
+    }
 
     return outputJSON(hasil);
   }

@@ -1402,7 +1402,7 @@
     // KONFIGURASI
     // =============================================
     // Script URL menggunakan endpoint baru
-    const scriptURL = "https://script.google.com/macros/s/AKfycbx9JZ8YTlXmvmuFYVM8hWwlJilDyAHTRTdhxSSaStfwVkK6f3vgLod7IsMYm48F4GFQ/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbydQrTHBQOsGAfy88WNGgkekTu-kpt-rDQ8QCdMQdTyMnvi8udOdqZfzPJ30skTLgYJ/exec";
 
     // =============================================
     // STATE
@@ -1436,11 +1436,60 @@
     });
 
     // =============================================
-    // OFFLINE DETECTION
+    // OFFLINE DETECTION & QUEUE
     // =============================================
     const offBanner = document.getElementById("offlineBanner");
-    window.addEventListener("online", () => { offBanner.style.display = "none"; showToast("Koneksi internet pulih kembali.", "success"); });
+    window.addEventListener("online", () => {
+      offBanner.style.display = "none";
+      showToast("Koneksi internet pulih kembali.", "success");
+      processOfflineQueue();
+    });
     window.addEventListener("offline", () => { offBanner.style.display = "block"; });
+
+    const sendWithRetry = async (data, maxR = 3, cur = 0) => {
+      try {
+        const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify({ action: "simpanData", data }) });
+        const hasil = await res.json();
+        if (hasil.retry && cur < maxR) {
+          showToast(`Server sibuk, mengulang (${cur + 1}/${maxR})...`, "warning", 2000);
+          await new Promise(r => setTimeout(r, 2500));
+          return sendWithRetry(data, maxR, cur + 1);
+        }
+        if (hasil.error && !hasil.retry) throw new Error(hasil.error);
+        return hasil;
+      } catch (err) {
+        if (cur < maxR) {
+          showToast(`Koneksi terganggu, mencoba ulang (${cur + 1}/${maxR})...`, "warning", 2000);
+          await new Promise(r => setTimeout(r, 3000));
+          return sendWithRetry(data, maxR, cur + 1);
+        }
+        throw err;
+      }
+    };
+
+    async function processOfflineQueue() {
+      let queue = JSON.parse(localStorage.getItem("muwajah_queue") || "[]");
+      if (queue.length === 0) return;
+
+      showToast(`Mengirim ${queue.length} antrean offline...`, "primary", 3000);
+      let failedQueue = [];
+
+      for (const payload of queue) {
+        try {
+          await sendWithRetry(payload, 2);
+        } catch (err) {
+          failedQueue.push(payload);
+        }
+      }
+
+      localStorage.setItem("muwajah_queue", JSON.stringify(failedQueue));
+      if (failedQueue.length === 0) {
+        showToast("Semua antrean offline berhasil terkirim!", "success");
+        if (stambukInput.value) muatProgress(stambukInput.value);
+      } else {
+        showToast(`Ada ${failedQueue.length} data masih gagal. Akan dicoba otomatis nanti.`, "danger", 5000);
+      }
+    }
 
     // =============================================
     // INIT FROM URL
@@ -1933,7 +1982,6 @@
     // SIMPAN — TAMPIL KONFIRMASI DULU
     // =============================================
     document.getElementById("btnSimpan").addEventListener("click", () => {
-      if (!navigator.onLine) { showToast("Anda sedang offline!", "danger"); return; }
 
       const ustadz = document.getElementById("pembimbing").value.trim();
       const jenis = jenisSel.value.trim();
@@ -1990,22 +2038,23 @@
         judul: judulArr
       };
 
+      if (!navigator.onLine) {
+        let queue = JSON.parse(localStorage.getItem("muwajah_queue") || "[]");
+        queue.push(payload);
+        localStorage.setItem("muwajah_queue", JSON.stringify(queue));
+        showToast("📱 Tersimpan di antrean offline. Akan terkirim otomatis saat sinyal kembali.", "info", 5000);
+
+        jenisSel.value = "";
+        document.getElementById("materiCard").style.display = "none";
+        tbody.querySelectorAll(".custom-check").forEach(cb => cb.checked = false);
+        updateSaveBtn();
+        return;
+      }
+
       const btn = document.getElementById("btnSimpan");
       const origHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...`;
-
-      const sendWithRetry = async (data, maxR = 3, cur = 0) => {
-        const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify({ action: "simpanData", data }) });
-        const hasil = await res.json();
-        if (hasil.retry && cur < maxR) {
-          showToast(`Server sibuk, mengulang (${cur + 1}/${maxR})...`, "warning", 2000);
-          await new Promise(r => setTimeout(r, 2500));
-          return sendWithRetry(data, maxR, cur + 1);
-        }
-        if (hasil.error && !hasil.retry) throw new Error(hasil.error);
-        return hasil;
-      };
 
       try {
         const hasil = await sendWithRetry(payload);
