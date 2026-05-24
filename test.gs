@@ -123,6 +123,7 @@ function simpanData(d) {
     const startRow = Math.max(1, lastRow + 1);
 
     sh.getRange(startRow, 1, rowsToAdd.length, rowsToAdd[0].length).setValues(rowsToAdd);
+    SpreadsheetApp.flush(); // SANGAT PENTING: Memaksa Google Sheets menyimpan data fisik sebelum melepas gembok antrean
 
     return outputJSON({ message: "✅ Data berhasil disimpan." });
 
