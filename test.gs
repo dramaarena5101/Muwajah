@@ -111,7 +111,15 @@ function simpanData(d) {
     ]);
 
     // cari baris target (jika sheet kosong, getLastRow() bisa 0)
-    const lastRow = sh.getLastRow();
+    // PERBAIKAN: Cari baris terakhir berdasarkan Kolom A agar tidak tertipu oleh rumus VLOOKUP
+    const aVals = sh.getRange("A:A").getValues();
+    let lastRow = 0;
+    for (let i = aVals.length - 1; i >= 0; i--) {
+      if (aVals[i][0] !== "") {
+        lastRow = i + 1;
+        break;
+      }
+    }
     const startRow = Math.max(1, lastRow + 1);
 
     sh.getRange(startRow, 1, rowsToAdd.length, rowsToAdd[0].length).setValues(rowsToAdd);
