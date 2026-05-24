@@ -67,27 +67,13 @@ function simpanData(d) {
     return outputJSON({ error: "Payload tidak lengkap: tidak ada judul." });
   }
 
-  const lock = LockService.getScriptLock();
-  // coba ambil lock dengan retry/backoff sederhana selama total 30s
-  const maxWaitMs = 30000;
-  const start = Date.now();
-  let haveLock = false;
-  let waitMs = 200; // mulai dari 200ms
-  while (Date.now() - start < maxWaitMs) {
-    try {
-      haveLock = lock.tryLock(0); // non-blocking, kita kendalikan retry manual
-    } catch (e) {
-      haveLock = false;
-    }
-    if (haveLock) break;
-    Utilities.sleep(waitMs);
-    // eksponensial tetapi cap 2000ms
-    waitMs = Math.min(2000, Math.floor(waitMs * 1.8));
-  }
-
-  if (!haveLock) {
-    // Jika tidak dapat lock, minta client untuk retry (atau bisa switch ke queue)
-    return outputJSON({ error: "Server sibuk. Silakan coba lagi dalam beberapa detik.", retry: true });
+  // PERBAIKAN KRUSIAL: Gunakan getDocumentLock agar semua device terkunci pada file Excel yang sama, 
+  // meskipun mereka mengakses dari versi/URL script yang berbeda.
+  const lock = LockService.getDocumentLock();
+  try {
+    lock.waitLock(30000); // Tunggu antrean maksimal 30 detik secara native
+  } catch (e) {
+    return outputJSON({ error: "Server sangat sibuk. Silakan coba lagi.", retry: true });
   }
 
   try {
@@ -109,6 +95,9 @@ function simpanData(d) {
       tanggal, d.stambuk || "", d.nama || "", d.kelas || "", d.daerah || "", d.ustadz || "",
       d.pelajaran || "", judulID, d.jenis || ""
     ]);
+
+    // Force sinkronisasi untuk memastikan kita tidak membaca cache lama
+    SpreadsheetApp.flush();
 
     // cari baris target (jika sheet kosong, getLastRow() bisa 0)
     // PERBAIKAN: Cari baris terakhir berdasarkan Kolom A agar tidak tertipu oleh rumus VLOOKUP
