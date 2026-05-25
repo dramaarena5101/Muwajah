@@ -1868,10 +1868,28 @@
         items.forEach(r => {
           const tgl = new Date(r.tanggal);
           const jam = isNaN(tgl) ? "" : tgl.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-          const materi = r.judul || "—";
+          let materi = r.judul || "—";
           const pelajaran = r.pelajaran || "—";
           const jenis = r.jenis || "—";
           const ustadz = r.ustadz || "";
+
+          if (pelajaranData[pelajaran]) {
+            const match = pelajaranData[pelajaran].find(m => 
+              String(m.id).trim() === String(r.judul).trim() || 
+              String(m.judul).trim() === String(r.judul).trim()
+            );
+            if (match) {
+              let parts = [r.judul];
+              if (match.judul && String(match.judul).trim() !== String(r.judul).trim()) {
+                parts.push(match.judul);
+              }
+              if (match.isi) {
+                parts.push(match.isi);
+              }
+              materi = parts.join(" - ");
+            }
+          }
+
           listHTML += `
             <div class="history-item" data-pelajaran="${encodeURIComponent(pelajaran)}">
               <div class="history-dot"></div>
