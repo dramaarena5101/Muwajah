@@ -17,6 +17,9 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <!-- jQuery dan Select2 -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -1126,7 +1129,7 @@
 <body>
   <!-- Offline Banner -->
   <div id="offlineBanner" class="offline-banner">
-    ⚠️ Anda sedang offline. Beberapa fitur tidak tersedia.
+    <i class="ph-fill ph-warning me-2"></i> Anda sedang offline. Beberapa fitur tidak tersedia.
   </div>
 
   <!-- ============================================
@@ -1136,7 +1139,7 @@
     <div class="container">
       <div class="d-flex align-items-center justify-content-between">
         <div>
-          <h1 class="app-title">📘 Muwajjah Tracker</h1>
+          <h1 class="app-title d-flex align-items-center gap-2"><i class="ph-duotone ph-book-open-text"></i> Muwajjah Tracker</h1>
           <p class="app-subtitle">Sistem Pantauan Pembelajaran Santri Terpadu</p>
         </div>
         <button class="btn-theme" id="btnTheme" title="Ganti Tema" aria-label="Toggle dark mode">
@@ -1156,17 +1159,17 @@
     ============================================ -->
     <div id="statsGrid" class="stats-grid" style="display:none!important;">
       <div class="stat-card">
-        <span class="stat-icon">📚</span>
+        <span class="stat-icon text-primary"><i class="ph-duotone ph-books"></i></span>
         <div class="stat-value" id="statTotal">0</div>
         <div class="stat-label">Total Setoran</div>
       </div>
       <div class="stat-card">
-        <span class="stat-icon">✅</span>
+        <span class="stat-icon text-success"><i class="ph-duotone ph-check-circle"></i></span>
         <div class="stat-value" id="statMateri">0</div>
         <div class="stat-label">Materi Selesai</div>
       </div>
       <div class="stat-card">
-        <span class="stat-icon">🏆</span>
+        <span class="stat-icon text-warning"><i class="ph-duotone ph-trophy"></i></span>
         <div class="stat-value" id="statJenis" style="font-size:12px; padding-top:6px;">-</div>
         <div class="stat-label">Jenis Terbanyak</div>
       </div>
@@ -1177,7 +1180,7 @@
     ============================================ -->
     <div class="card fade-in">
       <div class="card-body">
-        <div class="section-label">👤 Identitas Santri</div>
+        <div class="section-label"><i class="ph-bold ph-user fs-6 text-primary me-2"></i> Identitas Santri</div>
         <form id="formSantri" class="row g-3" onsubmit="return false;">
 
           <div class="col-md-6">
@@ -1219,7 +1222,7 @@
     ============================================ -->
     <div class="card fade-in">
       <div class="card-body">
-        <div class="section-label">⚙️ Parameter Setoran</div>
+        <div class="section-label"><i class="ph-bold ph-gear-six fs-6 text-primary me-2"></i> Parameter Setoran</div>
         <div class="row g-3">
 
           <div class="col-12">
@@ -1233,12 +1236,12 @@
             <label class="form-label">Jenis Kegiatan</label>
             <select id="jenis" class="form-select" required>
               <option value="">— Pilih Jenis Kegiatan —</option>
-              <option value="Menghafal">📖 Menghafal (Tahfizh)</option>
-              <option value="Merangkum">✍️ Merangkum (Takhlish)</option>
-              <option value="Menggaris">🖊️ Menggaris Bawahi (Tasthir)</option>
-              <option value="Menanyakan">❓ Meminta Penjelasan (Bayan)</option>
-              <option value="Latihan">📝 Latihan Soal (Tatbiq)</option>
-              <option value="Mengajar">👨‍🏫 Mengajar Orang Lain (Ta'lim)</option>
+              <option value="Menghafal">Menghafal (Tahfizh)</option>
+              <option value="Merangkum">Merangkum (Takhlish)</option>
+              <option value="Menggaris">Menggaris Bawahi (Tasthir)</option>
+              <option value="Menanyakan">Meminta Penjelasan (Bayan)</option>
+              <option value="Latihan">Latihan Soal (Tatbiq)</option>
+              <option value="Mengajar">Mengajar Orang Lain (Ta'lim)</option>
             </select>
           </div>
 
@@ -1261,7 +1264,7 @@
         <!-- Header row -->
         <div class="materi-header">
           <div>
-            <div class="section-label mb-0">📋 Daftar Materi</div>
+            <div class="section-label mb-0"><i class="ph-bold ph-list-checks fs-6 text-primary me-2"></i> Daftar Materi</div>
             <div class="materi-progress-wrap mt-2">
               <div class="materi-progress-bar-outer">
                 <div class="materi-progress-bar-inner" id="materiProgressBar" style="width:0%"></div>
@@ -1271,12 +1274,12 @@
           </div>
           <div class="d-flex flex-column align-items-end gap-2">
             <div class="search-wrap">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon"><i class="ph-bold ph-magnifying-glass"></i></span>
               <input type="text" id="searchJudul" class="form-control" placeholder="Cari materi...">
             </div>
             <div class="bulk-actions">
-              <button class="btn-bulk" id="btnSelectAll" title="Pilih semua">✔ Semua</button>
-              <button class="btn-bulk clear" id="btnClearAll" title="Hapus pilihan">✕ Batal</button>
+              <button class="btn-bulk d-flex align-items-center gap-1" id="btnSelectAll" title="Pilih semua"><i class="ph-bold ph-check-square"></i> Semua</button>
+              <button class="btn-bulk clear d-flex align-items-center gap-1" id="btnClearAll" title="Hapus pilihan"><i class="ph-bold ph-x-square"></i> Batal</button>
             </div>
           </div>
         </div>
@@ -1328,8 +1331,8 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header-custom">
-          <h5>📷 Scanner QR Santri</h5>
-          <button class="btn-modal-close" data-bs-dismiss="modal" aria-label="Tutup">✕</button>
+          <h5><i class="ph-bold ph-qr-code me-2"></i> Scanner QR Santri</h5>
+          <button class="btn-modal-close" data-bs-dismiss="modal" aria-label="Tutup"><i class="ph-bold ph-x"></i></button>
         </div>
         <div class="modal-body p-0">
           <div id="reader" style="width:100%;"></div>
@@ -1512,14 +1515,20 @@
     // =============================================
     function showToast(msg, type = "primary", delay = 4000) {
       const id = "t" + Date.now();
-      const icons = { success: "✅", danger: "❌", warning: "⚠️", primary: "ℹ️", info: "💡" };
-      const icon = icons[type] || "ℹ️";
+      const icons = { 
+        success: '<i class="ph-fill ph-check-circle fs-5"></i>', 
+        danger: '<i class="ph-fill ph-x-circle fs-5"></i>', 
+        warning: '<i class="ph-fill ph-warning fs-5"></i>', 
+        primary: '<i class="ph-fill ph-info fs-5"></i>', 
+        info: '<i class="ph-fill ph-info fs-5"></i>' 
+      };
+      const icon = icons[type] || icons.info;
       const bg = type === "warning" ? "text-dark bg-warning" : `text-white bg-${type}`;
       document.getElementById("toastContainer").insertAdjacentHTML("beforeend", `
         <div id="${id}" class="toast custom-toast align-items-center border-0 ${bg}" role="alert" aria-atomic="true">
           <div class="d-flex px-1">
             <div class="toast-body d-flex align-items-center gap-2">
-              <span>${icon}</span><span>${msg}</span>
+              ${icon} <span>${msg}</span>
             </div>
             <button type="button" class="btn-close ${type === "warning" ? "" : "btn-close-white"} me-2 m-auto" data-bs-dismiss="toast"></button>
           </div>
@@ -1821,8 +1830,8 @@
 
       } catch (err) {
         progressSantri = [];
-        wrap.innerHTML = `<div class="alert" style="border-radius:var(--radius-lg);background:var(--card-bg);border:1.5px solid var(--border);color:var(--danger);font-size:13px;">
-          ❌ Gagal memuat riwayat: ${err.message}</div>`;
+        wrap.innerHTML = `<div class="alert" style="border-radius:var(--radius-lg);background:var(--card-bg);border:1.5px solid var(--border);color:var(--danger);font-size:13px;display:flex;align-items:center;gap:8px;">
+          <i class="ph-bold ph-warning-circle fs-5"></i> Gagal memuat riwayat: ${err.message}</div>`;
         renderMateri(pelajaranSel.value);
       }
     }
@@ -1837,7 +1846,7 @@
         wrap.innerHTML = `
           <div class="card">
             <div class="history-empty">
-              <span class="empty-icon">📭</span>
+              <span class="empty-icon text-muted"><i class="ph-duotone ph-tray"></i></span>
               <h6>Belum Ada Riwayat Setoran</h6>
               <small class="text-muted">Santri ini belum pernah melakukan setoran.</small>
             </div>
@@ -1896,7 +1905,7 @@
               <div class="history-body">
                 <div class="history-pelajaran">${pelajaran}</div>
                 <div class="history-materi">${materi}</div>
-                ${ustadz ? `<div class="history-ustadz">👨‍🏫 ${ustadz}</div>` : ""}
+                ${ustadz ? `<div class="history-ustadz d-flex align-items-center gap-1"><i class="ph-bold ph-user-focus"></i> ${ustadz}</div>` : ""}
               </div>
               <div class="history-meta">
                 <span class="badge-jenis">${jenis}</span>
@@ -1911,7 +1920,7 @@
           <div class="card-body pb-0">
             <div class="history-header">
               <div class="history-title">
-                🕐 Riwayat Setoran
+                <i class="ph-bold ph-clock-counter-clockwise me-1 text-primary"></i> Riwayat Setoran
                 <span style="background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;">${data.length}</span>
               </div>
               <div class="history-filters">${filterChips}</div>
@@ -2060,7 +2069,7 @@
         let queue = JSON.parse(localStorage.getItem("muwajah_queue") || "[]");
         queue.push(payload);
         localStorage.setItem("muwajah_queue", JSON.stringify(queue));
-        showToast("📱 Tersimpan di antrean offline. Akan terkirim otomatis saat sinyal kembali.", "info", 5000);
+        showToast("Tersimpan di antrean offline. Akan terkirim otomatis saat sinyal kembali.", "info", 5000);
 
         jenisSel.value = "";
         document.getElementById("materiCard").style.display = "none";
@@ -2076,7 +2085,7 @@
 
       try {
         const hasil = await sendWithRetry(payload);
-        showToast(hasil.message || "Data berhasil disimpan! 🎉", "success");
+        showToast(hasil.message || "Data berhasil disimpan!", "success");
         await muatProgress(stambuk);
         renderMateri(pelajaran);
         jenisSel.value = "";
@@ -2101,7 +2110,7 @@
           $pem.append(`<option value="${item.nama}">${item.nama}</option>`);
         });
         $pem.select2({
-          placeholder: "🔍 Ketik nama ustadz...",
+          placeholder: "Ketik nama ustadz...",
           allowClear: true,
           width: "resolve"
         });
@@ -2110,7 +2119,7 @@
           if (f) f.focus();
         });
       } catch (err) {
-        $pem.html('<option value="">Gagal memuat data ustadz 😢</option>');
+        $pem.html('<option value="">Gagal memuat data ustadz</option>');
       }
     });
 
@@ -2127,7 +2136,7 @@
           { fps: 15, qrbox: { width: 240, height: 240 } },
           (decoded) => {
             document.getElementById("scanStatus").innerHTML =
-              "<span style='color:var(--success);font-weight:700;'>✅ QR Berhasil Dipindai!</span>";
+              "<span style='color:var(--success);font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;'><i class='ph-bold ph-check-circle'></i> QR Berhasil Dipindai!</span>";
             try {
               const raw = decoded.includes("?") ? decoded.split("?")[1] : decoded;
               const p = new URLSearchParams(raw);
@@ -2156,7 +2165,7 @@
         );
       } catch (err) {
         document.getElementById("scanStatus").innerHTML =
-          "<span style='color:var(--danger);'>❌ Kamera gagal dibuka. Pastikan izin kamera diberikan.</span>";
+          "<span style='color:var(--danger);display:flex;align-items:center;justify-content:center;gap:6px;'><i class='ph-bold ph-warning-circle'></i> Kamera gagal dibuka. Pastikan izin kamera diberikan.</span>";
       }
     });
 

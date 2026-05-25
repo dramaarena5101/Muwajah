@@ -14,6 +14,8 @@ function doPost(e) {
     if (action === "getSantri") return getSantri();
     if (action === "simpanPiket") return simpanPiket(req.data);
     if (action === "getPiketHistory") return getPiketHistory();
+    if (action === "getSettings") return getSettings();
+    if (action === "saveSettings") return saveSettings(req.data);
     if (action === "setupDatabase") {
       autoSetupDatabase(true);
       return outputJSON({ message: "✅ Inisialisasi/Reset database berhasil dilakukan!" });
@@ -39,10 +41,10 @@ function autoSetupDatabase(forceReset = false) {
     }
     
     // Tulis Header
-    shData.appendRow(["Stambuk", "Nama", "Kelas", "Rayon"]);
+    shData.appendRow(["Stambuk", "Nama", "Kelas", "Rayon", "Tipe"]);
     
     // Desain Header Premium (Warna Orange Brand)
-    const range = shData.getRange("A1:D1");
+    const range = shData.getRange("A1:E1");
     range.setFontWeight("bold")
          .setBackground("#ffedd5") // Orange sangat muda
          .setFontColor("#ea580c")   // Orange tua
@@ -51,27 +53,27 @@ function autoSetupDatabase(forceReset = false) {
     shData.setFrozenRows(1); // Bekukan baris pertama
     
     // Tambah Data Contoh/Dummy agar langsung bisa diuji coba di web
-    shData.appendRow(["1001", "Muhammad Fadhil", "5-B", "LAB"]);
-    shData.appendRow(["1002", "Akbar Kumara", "5-B", "LAB"]);
-    shData.appendRow(["1003", "Ahmad Fauzi", "5-A", "Makkah"]);
-    shData.appendRow(["1004", "Budi Santoso", "5-A", "Makkah"]);
-    shData.appendRow(["1005", "Zainuddin", "5-B", "Rayon 3"]);
+    shData.appendRow(["1001", "Muhammad Fadhil", "5-B", "LAB", "Mudabbir"]);
+    shData.appendRow(["1002", "Akbar Kumara", "5-B", "LAB", "Kader"]);
+    shData.appendRow(["1003", "Ahmad Fauzi", "5-A", "Makkah", "Mudabbir"]);
+    shData.appendRow(["1004", "Budi Santoso", "5-A", "Makkah", "Atlan"]);
+    shData.appendRow(["1005", "Zainuddin", "5-B", "Rayon 3", "OPPM"]);
   }
   
-  // 2. Setup Sheet "Piket Malam"
-  let shPiket = ss.getSheetByName("Piket Malam");
+  // 2. Setup Sheet "Riwayat Perizinan"
+  let shPiket = ss.getSheetByName("Riwayat Perizinan");
   if (!shPiket || forceReset) {
     if (shPiket) {
       shPiket.clear();
     } else {
-      shPiket = ss.insertSheet("Piket Malam");
+      shPiket = ss.insertSheet("Riwayat Perizinan");
     }
     
     // Tulis Header
-    shPiket.appendRow(["Tanggal", "Stambuk", "Nama", "Kelas", "Rayon", "Status"]);
+    shPiket.appendRow(["Tanggal", "Stambuk", "Nama", "Kelas", "Rayon", "Status", "Alasan"]);
     
     // Desain Header Premium (Warna Orange Brand)
-    const range = shPiket.getRange("A1:F1");
+    const range = shPiket.getRange("A1:G1");
     range.setFontWeight("bold")
          .setBackground("#ffedd5")
          .setFontColor("#ea580c")
@@ -98,7 +100,7 @@ function getSantri() {
     
     // Ambil stambuk yang sudah piket HARI INI
     const checkedInToday = new Set();
-    const shPiket = ss.getSheetByName("Piket Malam");
+    const shPiket = ss.getSheetByName("Riwayat Perizinan");
     if (shPiket) {
       const piketData = shPiket.getDataRange().getValues();
       piketData.shift(); // Buang header
@@ -133,6 +135,7 @@ function getSantri() {
         nama: String(row[1] || ""),
         kelas: String(row[2] || ""),
         rayon: String(row[3] || ""),
+        tipe: String(row[4] || ""),
         sudahPiket: checkedInToday.has(stambuk) // Tandai jika stambuk sudah mendaftar hari ini
       };
     }).filter(s => s.stambuk || s.nama);
@@ -147,7 +150,7 @@ function getSantri() {
 function getPiketHistory() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sh = ss.getSheetByName("Piket Malam");
+    const sh = ss.getSheetByName("Riwayat Perizinan");
     if (!sh) {
       return outputJSON([]);
     }
@@ -171,7 +174,8 @@ function getPiketHistory() {
         nama: String(row[2] || ""),
         kelas: String(row[3] || ""),
         rayon: String(row[4] || ""),
-        status: String(row[5] || "Hadir")
+        status: String(row[5] || "Hadir"),
+        alasan: String(row[6] || "Piket Malam")
       };
     }).reverse();
     
@@ -210,7 +214,7 @@ function simpanPiket(dataPiket) {
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sh = ss.getSheetByName("Piket Malam");
+    const sh = ss.getSheetByName("Riwayat Perizinan");
 
     const tanggal = Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd HH:mm:ss");
 
@@ -221,7 +225,8 @@ function simpanPiket(dataPiket) {
       s.nama || "",
       s.kelas || "",
       s.rayon || "",
-      "Hadir"
+      "Hadir",
+      s.alasan || "Piket Malam"
     ]);
 
     const lastRow = sh.getLastRow();
@@ -246,4 +251,27 @@ function simpanPiket(dataPiket) {
 function outputJSON(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// === Settings ===
+function getSettings() {
+  const props = PropertiesService.getScriptProperties();
+  const reasons = props.getProperty("alasan_izin");
+  if (!reasons) {
+    return outputJSON({ reasons: ["Piket Malam", "Sakit", "Izin Pulang", "Lainnya"] });
+  }
+  return outputJSON({ reasons: JSON.parse(reasons) });
+}
+
+function saveSettings(data) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    if (data.reasons && Array.isArray(data.reasons)) {
+      props.setProperty("alasan_izin", JSON.stringify(data.reasons));
+      return outputJSON({ message: "Pengaturan berhasil disimpan." });
+    }
+    return outputJSON({ error: "Data alasan tidak valid." });
+  } catch (err) {
+    return outputJSON({ error: "Gagal menyimpan pengaturan: " + err.message });
+  }
 }
