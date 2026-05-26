@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <title>Laporan & Pemantauan Perizinan Muwajah</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #e0e7ff;
+      --primary-glow: rgba(79, 70, 229, 0.2);
+      --bg-color: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Modern Glassmorphic Header */
+    .header-panel {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: var(--transition);
+    }
+
+    .main-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 32px;
+      animation: fadeInUp 0.4s ease both;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Security PIN Portal Overlay */
+    .pin-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pin-card {
+      background: var(--card-bg);
+      padding: 40px 30px;
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .pin-input {
+      font-size: 32px;
+      letter-spacing: 16px;
+      text-align: center;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--bg-color);
+      transition: var(--transition);
+    }
+
+    .pin-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
+      outline: none;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Premium Stats Dashboard Cards */
+    .stats-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      cursor: default;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-glow);
+    }
+
+    .stats-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .stats-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.1;
+      margin-bottom: 2px;
+    }
+
+    .stats-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Table styling for logs */
+    .guru-table-container {
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table thead th {
+      background-color: var(--bg-color);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 16px 18px;
+      border-bottom: 1.5px solid var(--border-color);
+    }
+
+    .table tbody tr {
+      transition: background var(--transition);
+    }
+
+    .table tbody tr:hover td {
+      background-color: var(--primary-light);
+    }
+
+    .table tbody td {
+      padding: 16px 18px;
+      font-size: 14px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Forms */
+    .form-control, .form-select {
+      background: var(--bg-color);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 14px;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background: var(--card-bg);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      outline: none;
+    }
+
+    /* Buttons */
+    .btn {
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      border: none;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
+      color: white;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+
+    .btn-outline-primary {
+      border: 1.5px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    .btn-outline-primary:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .btn-outline-secondary {
+      border: 1.5px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-outline-secondary:hover {
+      background: var(--bg-color);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .badge-status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    /* Offline Banner */
+    .offline-banner {
+      background: #ef4444;
+      color: white;
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10000;
+      display: none;
+    }
+
+    /* Loader */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+    }
+
+    /* PRINT CUSTOM RULES */
+    .print-header-report {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Sembunyikan SEMUA elemen web utama saat diprint */
+      body > *:not(#dedicatedPrintArea) {
+        display: none !important;
+      }
+
+      /* Tampilkan area khusus cetak */
+      #dedicatedPrintArea {
+        display: block !important;
+        width: 100%;
+        background-color: white;
+      }
+
+      /* Tipografi Standar Laporan Formal */
+      #dedicatedPrintArea {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 11pt;
+        line-height: 1.5;
+        color: #000;
+      }
+
+      .print-kop {
+        text-align: center;
+        border-bottom: 3px double #000;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+      }
+      
+      .print-kop h2 {
+        font-size: 16pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: 0 0 5px 0;
+      }
+      
+      .print-kop p {
+        font-size: 11pt;
+        margin: 0;
+      }
+
+      .print-section-title {
+        font-weight: bold;
+        font-size: 12pt;
+        margin-top: 25px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #000;
+        padding-bottom: 3px;
+      }
+
+      /* Tabel Bukti Formal */
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 10pt;
+      }
+      
+      .print-table th, .print-table td {
+        border: 1px solid #000;
+        padding: 6px 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      
+      .print-table th {
+        border-width: 2px 1px; /* border atas bawah lebih tebal */
+        font-weight: bold;
+        background-color: transparent !important;
+        text-align: center;
+      }
+
+      .print-table td {
+        border-width: 1px;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      /* Tanda tangan */
+      .print-signature-box {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 60px;
+        page-break-inside: avoid;
+        padding: 0 40px;
+      }
+      
+      .print-signature-box > div {
+        text-align: center;
+        width: 250px;
+      }
+      
+      .chart-img-container {
+        display: flex;
+        gap: 20px;
+        margin-top: 15px;
+        margin-bottom: 20px;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      
+      .chart-img-container .chart-item {
+        flex: 1;
+        text-align: center;
+      }
+      
+      .chart-img-container img {
+        max-width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Offline Banner -->
+  <div id="offlineBanner" class="offline-banner">
+    <i class="ph-fill ph-warning me-2"></i> Anda sedang offline. Beberapa fitur visual mungkin tidak sinkron.
+  </div>
+
+  <!-- Security PIN Overlay -->
+  <div id="pinOverlay" class="pin-overlay">
+    <div class="pin-card">
+      <div style="margin-bottom: 16px;"><i class="ph-duotone ph-lock-key" style="font-size: 56px; color: var(--primary);"></i></div>
+      <h4 class="fw-bold">Akses Ustadz Khusus</h4>
+      <p class="text-muted" style="font-size: 14px; margin-bottom: 24px;">Masukkan PIN Ustadz untuk membuka Laporan
+        Piket Malam.</p>
+      <input type="password" id="pinInput" class="pin-input w-100 mb-4" placeholder="••••" maxlength="4"
+        inputmode="numeric">
+      <button id="btnPin" class="btn btn-primary w-100 py-3 rounded-4 fw-bold" style="font-size: 16px;"
+        onclick="verifyPin()">Buka Dashboard</button>
+      <div id="pinError" class="text-danger mt-3 fw-medium d-flex align-items-center justify-content-center gap-2" style="display:none; font-size:14px;">
+        <i class="ph-fill ph-x-circle"></i> PIN yang Anda masukkan salah!
+      </div>
+    </div>
+  </div>
+
+  <!-- Glassmorphic Header -->
+  <header class="header-panel py-3 px-4 mb-4">
+    <div class="container d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <div class="text-primary bg-primary-subtle d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px;">
+          <i class="ph-duotone ph-chalkboard-teacher" style="font-size: 28px;"></i>
+        </div>
+        <div>
+          <h5 class="mb-0 fw-bold text-dark">Portal Pemantauan Ustadz</h5>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Sistem Informasi & Laporan
+            Perizinan
+            Santri</span>
+        </div>
+      </div>
+      <button class="btn btn-outline-danger btn-sm rounded-3 py-2 px-3 fw-bold d-flex align-items-center gap-2" onclick="logoutGuru()">
+        <i class="ph-bold ph-sign-out"></i> Keluar
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container flex-grow-1 py-2">
+    <div class="row justify-content-center">
+      <div class="col-lg-12">
+        <div class="main-card">
+
+          <!-- PRINT REPORT HEADER (Only visible during printing) -->
+          <div class="print-header-report">
+            <h4>SISTEM INFORMASI PERIZINAN MUWAJAH</h4>
+            <p style="margin: 0; font-size: 12px; color: #555;">Laporan Daftar Perizinan Santri Terpadu</p>
+            <div id="printDateReport" style="font-size: 11px; margin-top: 5px; font-weight: bold;"></div>
+          </div>
+
+          <!-- Header & Actions -->
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div>
+              <h4 class="fw-bold mb-0">Dashboard Laporan Perizinan</h4>
+              <p class="text-muted mb-0" style="font-size: 13px;">Riwayat izin dan absensi santri</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-outline-secondary py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                data-bs-toggle="modal" data-bs-target="#modalSettings" onclick="loadSettingsUI()">
+                <i class="ph-bold ph-gear"></i> Pengaturan Izin
+              </button>
+              <button class="btn btn-outline-primary py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                onclick="fetchHistoryData()">
+                <i class="ph-bold ph-arrows-clockwise"></i> Refresh Data
+              </button>
+              <button class="btn btn-primary py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                onclick="printReport()">
+                <i class="ph-bold ph-printer"></i> Cetak A4
+              </button>
+              <button class="btn btn-success py-2.5 px-3 rounded-3 fw-bold d-flex align-items-center gap-2"
+                onclick="downloadCSV()">
+                <i class="ph-bold ph-file-csv"></i> Download CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="row g-3 mb-4 stats-row">
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-primary" style="background: #ffedd5;"><i class="ph-duotone ph-moon"></i></div>
+                <div>
+                  <div class="stats-val" id="statToday">0</div>
+                  <div class="stats-lbl">Petugas Hari Ini</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-success" style="background: #dcfce7;"><i class="ph-duotone ph-house"></i></div>
+                <div>
+                  <div class="stats-val" id="statActiveRayon">-</div>
+                  <div class="stats-lbl">Rayon Teraktif</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stats-card">
+                <div class="stats-icon text-info" style="background: #e0f2fe;"><i class="ph-duotone ph-clipboard-text"></i></div>
+                <div>
+                  <div class="stats-val" id="statTotalRows">0</div>
+                  <div class="stats-lbl">Total Log Entri</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          </div>
+
+          <!-- Global Filters Area -->
+          <div class="row g-3 mb-4 bg-light p-3 rounded-4" style="border: 1px solid var(--border-color); margin: 0;">
+            <div class="col-md-12 d-flex align-items-end flex-wrap gap-3">
+              <div style="flex: 1; min-width: 180px;">
+                <label class="form-label fw-bold text-muted d-flex align-items-center gap-2" style="font-size: 11px; text-transform: uppercase;"><i class="ph-bold ph-calendar-blank"></i> Dari Tanggal</label>
+                <input type="date" id="startDateFilter" class="form-control py-2" onchange="applyGlobalFilters()">
+              </div>
+              <div style="flex: 1; min-width: 180px;">
+                <label class="form-label fw-bold text-muted d-flex align-items-center gap-2" style="font-size: 11px; text-transform: uppercase;"><i class="ph-bold ph-calendar-check"></i> Sampai Tanggal</label>
+                <input type="date" id="endDateFilter" class="form-control py-2" onchange="applyGlobalFilters()">
+              </div>
+              <div class="d-flex gap-2 flex-wrap pb-1" id="dateShortcutContainer">
+                <button class="btn btn-outline-secondary btn-sm rounded-pill fw-medium px-3 date-shortcut" onclick="setDateShortcut('today')">Hari Ini</button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill fw-medium px-3 date-shortcut" onclick="setDateShortcut('7days')">7 Hari</button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill fw-medium px-3 date-shortcut" onclick="setDateShortcut('30days')">1 Bulan</button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill fw-medium px-3 date-shortcut active" onclick="setDateShortcut('all')">Semua</button>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3 mb-4 bg-light p-3 rounded-4" style="border: 1px solid var(--border-color); margin: 0;">
+            <div class="col-md-6">
+              <label class="form-label fw-bold text-muted d-flex align-items-center gap-2" style="font-size: 11px; text-transform: uppercase;"><i class="ph-bold ph-magnifying-glass"></i> Cari Nama / Stambuk</label>
+              <input type="text" id="searchGuru" class="form-control py-2" placeholder="Ketik kata kunci pencarian..." onkeyup="applyGlobalFilters()">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold text-muted d-flex align-items-center gap-2" style="font-size: 11px; text-transform: uppercase;"><i class="ph-bold ph-house"></i> Filter Rayon</label>
+              <select id="rayonFilterGuru" class="form-select py-2" onchange="applyGlobalFilters()">
+                <option value="">Semua Rayon</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Nav Tabs -->
+          <ul class="nav nav-pills mb-4 gap-2" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-bold px-4 py-2.5 rounded-pill d-flex align-items-center gap-2" id="analisis-tab" data-bs-toggle="pill" data-bs-target="#analisis" type="button" role="tab" aria-controls="analisis" aria-selected="true"><i class="ph-bold ph-chart-line-up"></i> Analisis Cerdas</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-bold px-4 py-2.5 rounded-pill d-flex align-items-center gap-2 text-muted" id="tabel-tab" data-bs-toggle="pill" data-bs-target="#tabel" type="button" role="tab" aria-controls="tabel" aria-selected="false"><i class="ph-bold ph-table"></i> Tabel Data Laporan</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="reportTabsContent">
+            <!-- TAB 1: ANALISIS CERDAS -->
+            <div class="tab-pane fade show active" id="analisis" role="tabpanel" aria-labelledby="analisis-tab">
+              <!-- Smart Insights Alert (Premium Glassmorphism) -->
+              <div class="border-0 mb-4 p-4 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0.15) 100%); border: 1px solid rgba(79, 70, 229, 0.2) !important;">
+                <div class="position-absolute" style="top: -20px; right: -20px; font-size: 150px; opacity: 0.05; color: var(--primary);">
+                  <i class="ph-fill ph-brain"></i>
+                </div>
+                <div class="d-flex align-items-start gap-3 position-relative z-1">
+                  <div class="bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="ph-duotone ph-sparkle text-primary" style="font-size: 28px;"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-primary mb-1">AI Wawasan Cerdas</h6>
+                    <p class="mb-0 text-dark" id="smartInsightsText" style="font-size: 14px; line-height: 1.6;">Sedang mengumpulkan & memproses wawasan mendalam dari data analitik...</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Charts Row 1 -->
+              <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                  <div class="border border-opacity-50 rounded-4 p-3 bg-white shadow-sm h-100">
+                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2"><i class="ph-bold ph-trend-up"></i> Tren Input Laporan Harian</h6>
+                    <div style="position: relative; height: 260px;"><canvas id="trendChart"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="border border-opacity-50 rounded-4 p-3 bg-white shadow-sm h-100">
+                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2"><i class="ph-bold ph-pie-chart"></i> Distribusi Alasan Izin</h6>
+                    <div style="position: relative; height: 260px;"><canvas id="jenisIzinChart"></canvas></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Charts Row 2 -->
+              <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                  <div class="border border-opacity-50 rounded-4 p-3 bg-white shadow-sm h-100">
+                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2"><i class="ph-bold ph-house"></i> Analisis Per Rayon</h6>
+                    <div style="position: relative; height: 250px;"><canvas id="rayonChart"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="border border-opacity-50 rounded-4 p-3 bg-white shadow-sm h-100">
+                    <h6 class="fw-bold text-muted mb-3 d-flex align-items-center gap-2"><i class="ph-bold ph-books"></i> Analisis Per Kelas</h6>
+                    <div style="position: relative; height: 250px;"><canvas id="kelasChart"></canvas></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Leaderboards -->
+              <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                  <div class="border border-opacity-50 rounded-4 p-0 bg-white shadow-sm h-100 overflow-hidden">
+                    <div class="bg-danger-subtle p-3 border-bottom border-danger-subtle d-flex align-items-center gap-2">
+                      <i class="ph-fill ph-warning-octagon text-danger" style="font-size: 24px;"></i>
+                      <h6 class="fw-bold text-danger mb-0">Pantauan Khusus (Paling Sering Izin/Sakit)</h6>
+                    </div>
+                    <div class="p-0">
+                      <ul class="list-group list-group-flush m-0" id="leaderboardPantauan">
+                        <li class="list-group-item text-muted text-center py-4 border-0">Memuat data santri...</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="border border-opacity-50 rounded-4 p-0 bg-white shadow-sm h-100 overflow-hidden">
+                    <div class="bg-success-subtle p-3 border-bottom border-success-subtle d-flex align-items-center gap-2">
+                      <i class="ph-fill ph-trophy text-success" style="font-size: 24px;"></i>
+                      <h6 class="fw-bold text-success mb-0">Kandidat Apresiasi (Paling Sering Piket)</h6>
+                    </div>
+                    <div class="p-0">
+                      <ul class="list-group list-group-flush m-0" id="leaderboardRajin">
+                        <li class="list-group-item text-muted text-center py-4 border-0">Memuat data santri...</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: TABEL DATA LENTAH -->
+            <div class="tab-pane fade" id="tabel" role="tabpanel" aria-labelledby="tabel-tab">
+
+          <!-- Datatable Laporan -->
+          <div class="guru-table-container mt-4">
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle" id="tablePiketGuru">
+                <thead>
+                  <tr>
+                    <th style="width: 180px;">Waktu Input</th>
+                    <th style="width: 100px;">Stambuk</th>
+                    <th>Nama Lengkap</th>
+                    <th style="width: 100px;">Kelas</th>
+                    <th style="width: 140px;">Rayon</th>
+                    <th style="width: 140px;">Jenis Izin</th>
+                  </tr>
+                </thead>
+                <tbody id="piketHistoryBody">
+                  <!-- Dinamis diisi lewat JS -->
+                </tbody>
+              </table>
+            </div>
+            <div id="emptyTableMessage" class="text-center py-5 text-muted fw-medium" style="display:none;">
+              <i class="ph-duotone ph-tray d-block mx-auto mb-3" style="font-size: 48px; opacity: 0.5;"></i>
+              Tidak ada data laporan yang cocok dengan filter pencarian.
+            </div>
+          </div>
+          </div> <!-- End Tab Tabel -->
+          </div> <!-- End Tab Content -->
+
+          <!-- PRINT SIGNATURE AREA (Only visible during printing) -->
+          <div class="print-signature" style="display: none;">
+            <div class="signature-block">
+              <p>Mengetahui,</p>
+              <br><br><br>
+              <p class="fw-bold" style="border-bottom: 1px solid #000; padding-bottom: 2px;">(
+                .................................... )</p>
+              <p style="font-size: 10px; margin-top: -5px;">Ustadz Piket Harian</p>
+            </div>
+            <div class="signature-block">
+              <p>Bagian Keamanan,</p>
+              <br><br><br>
+              <p class="fw-bold" style="border-bottom: 1px solid #000; padding-bottom: 2px;">(
+                .................................... )</p>
+              <p style="font-size: 10px; margin-top: -5px;">Penanggung Jawab</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div id="loader" class="loader-overlay" style="display:none;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem; border-width: 4px;"></div>
+    <span class="fw-bold" id="loaderText" style="color: var(--text-main);">Memuat Laporan database...</span>
+  </div>
+    <!-- Modal Settings -->
+  <div class="modal fade" id="modalSettings" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+          <h5 class="fw-bold mb-0">Pengaturan Alasan Izin</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body px-4 py-4">
+          <p class="text-muted" style="font-size: 13px;">Kelola daftar alasan izin yang muncul di form pendaftaran
+            santri.</p>
+          <div id="settingsList" class="d-flex flex-column gap-2 mb-3">
+            <!-- Diisi lewat JS -->
+          </div>
+          <div class="d-flex gap-2">
+            <input type="text" id="newReasonInput" class="form-control" placeholder="Ketik alasan baru..."
+              style="border-radius: 10px 0 0 10px;">
+            <button class="btn btn-primary px-4 fw-bold" onclick="addReason()"
+              style="border-radius: 0 10px 10px 0;"><i class="ph-bold ph-plus"></i> Tambah</button>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+          <button type="button" class="btn btn-light fw-bold px-4 py-2" data-bs-dismiss="modal">Tutup</button>
+          <button type="button" class="btn btn-primary fw-bold px-4 py-2" onclick="saveSettingsUI()">Simpan
+            Pengaturan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Drill-down Detail -->
+  <div class="modal fade" id="modalDrillDown" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content border-0 rounded-4 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 position-relative overflow-hidden">
+          <div class="position-absolute" style="top: -20px; right: -20px; font-size: 100px; opacity: 0.05; color: var(--primary);">
+            <i class="ph-fill ph-magnifying-glass-plus"></i>
+          </div>
+          <div>
+            <h5 class="fw-bold mb-1" id="drillDownTitle" style="color: var(--primary);">Rincian Data</h5>
+            <p class="text-muted mb-0" id="drillDownSubtitle" style="font-size: 13px;">Melihat detail santri dari hasil filter grafik</p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 20px; right: 20px; z-index: 10;"></button>
+        </div>
+        <div class="modal-body px-4 pb-4 pt-3">
+          <div class="table-responsive rounded-3 border">
+            <table class="table table-hover table-borderless align-middle mb-0" style="font-size: 14px;">
+              <thead class="table-light border-bottom">
+                <tr>
+                  <th class="py-3 px-3 text-muted fw-bold">Tanggal</th>
+                  <th class="py-3 px-3 text-muted fw-bold">Nama</th>
+                  <th class="py-3 px-3 text-muted fw-bold">Kelas</th>
+                  <th class="py-3 px-3 text-muted fw-bold">Alasan</th>
+                </tr>
+              </thead>
+              <tbody id="drillDownTableBody">
+                <!-- Diisi via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Dedicated Print Area (Only visible when printing) -->
+  <div id="dedicatedPrintArea" style="display:none;"></div>
+
+  <!-- jQuery & Bootstrap -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // =========================================================================
+    // URL Web App Google Apps Script database Piket Malam
+    // =========================================================================
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwzszFyXbjcJH31qy8ep4W6vh3W9gcjtV_rmQjkXKLjbz1KOgGMBRa5zMQ-Ax1q2YQ/exec";
+    const PIN_USTADZ = "1234";
+
+    let uniqueRayons = [];
+    let piketHistory = [];
+
+    $(document).ready(function () {
+      // Offline/Online triggers
+      window.addEventListener('online', () => {
+        $('#offlineBanner').hide();
+        showToast("Koneksi internet kembali pulih.", "success");
+      });
+      window.addEventListener('offline', () => {
+        $('#offlineBanner').show();
+      });
+
+      // Pengecekan PIN Login Permanen (localStorage)
+      if (localStorage.getItem("auth_laporan") === "verified") {
+        $('#pinOverlay').hide();
+        initializeDashboard();
+      } else {
+        $('#pinInput').focus();
+      }
+
+      // Enter key trigger login
+      $('#pinInput').on('keypress', function (e) {
+        if (e.key === "Enter") verifyPin();
+      });
+    });
+
+    // === Verifikasi PIN ===
+    function verifyPin() {
+      const input = $('#pinInput').val();
+      if (input === PIN_USTADZ) {
+        localStorage.setItem("auth_laporan", "verified");
+        $('#pinOverlay').css('opacity', '0');
+        setTimeout(() => {
+          $('#pinOverlay').hide();
+          initializeDashboard();
+        }, 400);
+      } else {
+        $('#pinError').show();
+        $('#pinInput').val('').focus();
+
+        // Shake card effect
+        const card = $('.pin-card');
+        card.css('transform', 'translateX(10px)');
+        setTimeout(() => card.css('transform', 'translateX(-10px)'), 50);
+        setTimeout(() => card.css('transform', 'translateX(10px)'), 100);
+        setTimeout(() => card.css('transform', 'translateX(0)'), 150);
+      }
+    }
+
+    // === Log Out ===
+    function logoutGuru() {
+      localStorage.removeItem("auth_laporan");
+      location.reload();
+    }
+
+    // === Inisialisasi Dashboard Utama ===
+    function initializeDashboard() {
+      fetchRayonData();
+      fetchHistoryData();
+    }
+
+    // === Ambil Data Rayon Unik ===
+    function fetchRayonData() {
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "getSantri" }),
+        contentType: 'text/plain',
+        success: function (response) {
+          if (response.error) return;
+          const rayons = [...new Set(response.map(s => s.rayon).filter(Boolean))].sort();
+          uniqueRayons = rayons;
+          populateRayonFiltersGuru();
+        }
+      });
+    }
+
+    // === Tampilkan Dropdown Filter Rayon ===
+    function populateRayonFiltersGuru() {
+      const select = $('#rayonFilterGuru');
+      select.find('option:not(:first)').remove();
+
+      uniqueRayons.forEach(rayon => {
+        select.append(`<option value="${rayon}">Rayon ${rayon}</option>`);
+      });
+    }
+
+    // === Ambil Riwayat Laporan Perizinan ===
+    function fetchHistoryData() {
+      showLoader("Mengambil data riwayat...");
+
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "getPiketHistory" }),
+        contentType: 'text/plain',
+        success: function (response) {
+          hideLoader();
+          if (response.error) {
+            showToast("Gagal memuat laporan: " + response.error, "danger", 6000);
+            return;
+          }
+
+          piketHistory = response;
+          applyGlobalFilters();
+        },
+        error: function (err) {
+          hideLoader();
+          showToast("Koneksi gagal saat mengambil laporan piket.", "danger", 6000);
+        }
+      });
+    }
+
+    let filteredPiketHistory = [];
+
+    // === Global Filter Logic ===
+    function setDateShortcut(type) {
+      $('.date-shortcut').removeClass('active');
+      $(event.target).addClass('active');
+
+      const today = new Date();
+      let startStr = "";
+      let endStr = today.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+
+      if(type === 'today') {
+        startStr = endStr;
+      } else if (type === '7days') {
+        let d = new Date();
+        d.setDate(d.getDate() - 6);
+        startStr = d.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+      } else if (type === '30days') {
+        let d = new Date();
+        d.setDate(d.getDate() - 29);
+        startStr = d.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+      } else {
+        startStr = "";
+        endStr = "";
+      }
+
+      $('#startDateFilter').val(startStr);
+      $('#endDateFilter').val(endStr);
+      applyGlobalFilters();
+    }
+
+    function applyGlobalFilters() {
+      const searchVal = $('#searchGuru').val().toLowerCase();
+      const rayonVal = $('#rayonFilterGuru').val();
+      const startVal = $('#startDateFilter').val();
+      const endVal = $('#endDateFilter').val();
+
+      filteredPiketHistory = piketHistory.filter(item => {
+        let itemDateStr = item.tanggal ? item.tanggal.split(" ")[0] : "";
+        let itemRayon = item.rayon ? String(item.rayon) : "";
+        let searchContent = `${item.nama} ${item.stambuk} ${item.kelas} ${item.alasan}`.toLowerCase();
+
+        let matchSearch = !searchVal || searchContent.includes(searchVal);
+        let matchRayon = !rayonVal || itemRayon === String(rayonVal);
+        let matchDate = true;
+
+        if (startVal && endVal) {
+          matchDate = (itemDateStr >= startVal && itemDateStr <= endVal);
+        } else if (startVal) {
+          matchDate = (itemDateStr >= startVal);
+        } else if (endVal) {
+          matchDate = (itemDateStr <= endVal);
+        }
+
+        return matchSearch && matchRayon && matchDate;
+      });
+
+      calculateGuruStats(filteredPiketHistory);
+      renderGuruTable(filteredPiketHistory);
+      renderAnalyticsCharts(filteredPiketHistory);
+      renderLeaderboards(filteredPiketHistory);
+    }
+
+    // === Hitung Statistik (Stats Cards) ===
+    function calculateGuruStats(data) {
+      $('#statTotalRows').text(data.length);
+
+      const todayStr = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+      let todayCount = 0;
+      const rayonCounts = {};
+
+      data.forEach(item => {
+        if (item.tanggal && item.tanggal.startsWith(todayStr)) todayCount++;
+        if (item.rayon) rayonCounts[item.rayon] = (rayonCounts[item.rayon] || 0) + 1;
+      });
+
+      $('#statToday').text(todayCount);
+
+      let activeRayon = "-";
+      let maxCount = 0;
+      for (const r in rayonCounts) {
+        if (rayonCounts[r] > maxCount) {
+          maxCount = rayonCounts[r];
+          activeRayon = `Rayon ${r} (${maxCount})`;
+        }
+      }
+      $('#statActiveRayon').text(activeRayon);
+    }
+
+    // === Chart Instances ===
+    let trendChartInstance = null;
+    let jenisIzinChartInstance = null;
+    let rayonChartInstance = null;
+    let kelasChartInstance = null;
+
+    function clearCharts() {
+      if(trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+      if(jenisIzinChartInstance) { jenisIzinChartInstance.destroy(); jenisIzinChartInstance = null; }
+      if(rayonChartInstance) { rayonChartInstance.destroy(); rayonChartInstance = null; }
+      if(kelasChartInstance) { kelasChartInstance.destroy(); kelasChartInstance = null; }
+      $('#smartInsightsText').html("Tidak ada data dalam rentang filter ini.");
+    }
+
+    // === Render Analytics Charts ===
+    function renderAnalyticsCharts(data) {
+      if(data.length === 0) {
+        clearCharts();
+        return;
+      }
+
+      // 1. Tren Harian (Multi-Line: Tugas vs Izin)
+      const datesSet = new Set();
+      const tugasCounts = {};
+      const izinCounts = {};
+
+      data.forEach(item => {
+        const d = item.tanggal ? item.tanggal.split(" ")[0] : "Unknown";
+        datesSet.add(d);
+        const alasanLower = (item.alasan || 'Piket Malam').toLowerCase();
+        if (alasanLower.includes('piket') || alasanLower.includes('tugas') || alasanLower.includes('mandiri')) {
+          tugasCounts[d] = (tugasCounts[d] || 0) + 1;
+        } else {
+          izinCounts[d] = (izinCounts[d] || 0) + 1;
+        }
+      });
+      const sortedDates = Array.from(datesSet).sort().slice(-14); // Tampilkan maks 14 hari di chart
+      const trendDataTugas = sortedDates.map(d => tugasCounts[d] || 0);
+      const trendDataIzin = sortedDates.map(d => izinCounts[d] || 0);
+
+      if(trendChartInstance) trendChartInstance.destroy();
+      const ctxTrend = document.getElementById('trendChart').getContext('2d');
+      trendChartInstance = new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+          labels: sortedDates,
+          datasets: [
+            {
+              label: 'Kehadiran Tugas/Piket',
+              data: trendDataTugas,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: 'Ketidakhadiran (Izin/Sakit)',
+              data: trendDataIzin,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { legend: { position: 'top' } }, 
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          onClick: (e, activeEls) => {
+            if(activeEls.length > 0) {
+              const idx = activeEls[0].index;
+              const dateClicked = sortedDates[idx];
+              showDrillDownModal(dateClicked, 'date', dateClicked);
+            }
+          }
+        }
+      });
+
+      // 2. Distribusi Alasan Izin
+      const reasonCounts = {};
+      data.forEach(item => {
+        const r = item.alasan || 'Piket Malam';
+        reasonCounts[r] = (reasonCounts[r] || 0) + 1;
+      });
+      if(jenisIzinChartInstance) jenisIzinChartInstance.destroy();
+      const ctxIzin = document.getElementById('jenisIzinChart').getContext('2d');
+      const labelsIzin = Object.keys(reasonCounts);
+      jenisIzinChartInstance = new Chart(ctxIzin, {
+        type: 'doughnut',
+        data: {
+          labels: labelsIzin,
+          datasets: [{
+            data: Object.values(reasonCounts),
+            backgroundColor: ['#4f46e5', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6']
+          }]
+        },
+        options: { 
+          responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } },
+          onClick: (e, activeEls) => {
+            if(activeEls.length > 0) {
+              const clickedReason = labelsIzin[activeEls[0].index];
+              showDrillDownModal(`Alasan: ${clickedReason}`, 'reason', clickedReason);
+            }
+          }
+        }
+      });
+
+      // 3. Analisis Per Rayon
+      const rayonCounts = {};
+      data.forEach(item => {
+        const r = item.rayon || 'Unknown';
+        rayonCounts[r] = (rayonCounts[r] || 0) + 1;
+      });
+      const sortedRayons = Object.keys(rayonCounts).sort();
+      const rayonData = sortedRayons.map(r => rayonCounts[r]);
+
+      if(rayonChartInstance) rayonChartInstance.destroy();
+      const ctxRayon = document.getElementById('rayonChart').getContext('2d');
+      rayonChartInstance = new Chart(ctxRayon, {
+        type: 'bar',
+        data: {
+          labels: sortedRayons,
+          datasets: [{
+            label: 'Total',
+            data: rayonData,
+            backgroundColor: '#3b82f6',
+            borderRadius: 6
+          }]
+        },
+        options: { 
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          onClick: (e, activeEls) => {
+            if(activeEls.length > 0) {
+              const clickedRayon = sortedRayons[activeEls[0].index];
+              showDrillDownModal(`Rayon ${clickedRayon}`, 'rayon', clickedRayon);
+            }
+          }
+        }
+      });
+
+      // 4. Analisis Per Kelas
+      const kelasCounts = {};
+      data.forEach(item => {
+        const k = item.kelas || 'Unknown';
+        kelasCounts[k] = (kelasCounts[k] || 0) + 1;
+      });
+      const sortedKelas = Object.keys(kelasCounts).sort();
+      const kelasData = sortedKelas.map(k => kelasCounts[k]);
+
+      if(kelasChartInstance) kelasChartInstance.destroy();
+      const ctxKelas = document.getElementById('kelasChart').getContext('2d');
+      kelasChartInstance = new Chart(ctxKelas, {
+        type: 'bar',
+        data: {
+          labels: sortedKelas,
+          datasets: [{
+            label: 'Total',
+            data: kelasData,
+            backgroundColor: '#10b981',
+            borderRadius: 6
+          }]
+        },
+        options: { 
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          onClick: (e, activeEls) => {
+            if(activeEls.length > 0) {
+              const clickedKelas = sortedKelas[activeEls[0].index];
+              showDrillDownModal(`Kelas ${clickedKelas}`, 'kelas', clickedKelas);
+            }
+          }
+        }
+      });
+
+      generateSmartInsights(reasonCounts, rayonCounts, sortedDates, data);
+    }
+
+    // === Drill-Down Modal Logic ===
+    function showDrillDownModal(title, type, value) {
+      $('#drillDownTitle').text(`Rincian Data: ${title}`);
+      
+      const tbody = $('#drillDownTableBody');
+      tbody.empty();
+
+      // Gunakan data dari filteredPiketHistory (karena grafik merender dari rentang tanggal filter)
+      const dataToShow = filteredPiketHistory.filter(item => {
+        if (type === 'date') {
+          return item.tanggal && item.tanggal.startsWith(value);
+        } else if (type === 'reason') {
+          const als = item.alasan || 'Piket Malam';
+          return als === value;
+        } else if (type === 'rayon') {
+          return String(item.rayon) === String(value);
+        } else if (type === 'kelas') {
+          return String(item.kelas) === String(value);
+        }
+        return false;
+      });
+
+      if (dataToShow.length === 0) {
+        tbody.html('<tr><td colspan="4" class="text-center text-muted py-4 border-0">Tidak ada rincian data tersedia.</td></tr>');
+      } else {
+        dataToShow.forEach(item => {
+          let displayTime = item.tanggal ? item.tanggal.split(" ")[0] : "-";
+          const tr = $(`
+            <tr>
+              <td class="px-3 text-secondary border-0 border-bottom" style="font-size:13px;">${displayTime}</td>
+              <td class="px-3 fw-bold text-dark border-0 border-bottom">${item.nama}</td>
+              <td class="px-3 border-0 border-bottom">${item.kelas}</td>
+              <td class="px-3 border-0 border-bottom"><span class="badge bg-light text-dark border">${item.alasan || 'Piket Malam'}</span></td>
+            </tr>
+          `);
+          tbody.append(tr);
+        });
+      }
+
+      $('#modalDrillDown').modal('show');
+    }
+
+    // === Render Leaderboards ===
+    function renderLeaderboards(data) {
+      const rajinMap = {};
+      const pantauanMap = {};
+
+      data.forEach(item => {
+        if (!item.nama) return;
+        const key = item.nama + ' (' + (item.kelas || '-') + ')';
+        const alasanRaw = item.alasan || 'Piket Malam';
+        const alasanLower = alasanRaw.toLowerCase();
+
+        if (alasanLower.includes('piket') || alasanLower.includes('tugas') || alasanLower.includes('mandiri')) {
+          if(!rajinMap[key]) rajinMap[key] = { total: 0, details: {} };
+          rajinMap[key].total++;
+          rajinMap[key].details[alasanRaw] = (rajinMap[key].details[alasanRaw] || 0) + 1;
+        } else {
+          if(!pantauanMap[key]) pantauanMap[key] = { total: 0, details: {} };
+          pantauanMap[key].total++;
+          pantauanMap[key].details[alasanRaw] = (pantauanMap[key].details[alasanRaw] || 0) + 1;
+        }
+      });
+
+      const rajinArr = Object.entries(rajinMap).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+      const pantauanArr = Object.entries(pantauanMap).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+
+      const formatDetails = (detailsObj) => {
+        return Object.entries(detailsObj).map(e => `${e[1]} ${e[0]}`).join(', ');
+      };
+
+      const ulRajin = $('#leaderboardRajin');
+      ulRajin.empty();
+      if(rajinArr.length === 0) {
+        ulRajin.html('<li class="list-group-item text-muted text-center py-4 border-0">Belum ada kandidat apresiasi di rentang ini.</li>');
+      } else {
+        rajinArr.forEach((r, idx) => {
+          ulRajin.append(`<li class="list-group-item d-flex justify-content-between align-items-center border-0 px-4 py-3 border-bottom">
+            <div class="text-truncate" style="max-width: 80%;">
+              <span class="fw-bold me-2 text-muted">#${idx+1}</span> <span class="fw-bold text-dark text-truncate">${r[0]}</span>
+              <div style="font-size: 11px; margin-left: 28px;" class="text-muted mt-1">${formatDetails(r[1].details)}</div>
+            </div>
+            <span class="badge bg-success rounded-pill px-3 py-2 flex-shrink-0">${r[1].total} Kali</span>
+          </li>`);
+        });
+      }
+
+      const ulPantauan = $('#leaderboardPantauan');
+      ulPantauan.empty();
+      if(pantauanArr.length === 0) {
+        ulPantauan.html('<li class="list-group-item text-muted text-center py-4 border-0">Aman, tidak ada santri yang perlu dipantau.</li>');
+      } else {
+        pantauanArr.forEach((p, idx) => {
+          ulPantauan.append(`<li class="list-group-item d-flex justify-content-between align-items-center border-0 px-4 py-3 border-bottom">
+            <div class="text-truncate" style="max-width: 80%;">
+              <span class="fw-bold me-2 text-muted">#${idx+1}</span> <span class="fw-bold text-dark text-truncate">${p[0]}</span>
+              <div style="font-size: 11px; margin-left: 28px;" class="text-muted mt-1">${formatDetails(p[1].details)}</div>
+            </div>
+            <span class="badge bg-danger rounded-pill px-3 py-2 flex-shrink-0">${p[1].total} Kali</span>
+          </li>`);
+        });
+      }
+    }
+
+    // === Generate Smart Insights AI ===
+    function generateSmartInsights(reasonCounts, rayonCounts, sortedDates, data) {
+      if(sortedDates.length === 0) return;
+      
+      const topRayon = Object.keys(rayonCounts).reduce((a, b) => rayonCounts[a] > rayonCounts[b] ? a : b);
+      const topReason = Object.keys(reasonCounts).reduce((a, b) => reasonCounts[a] > reasonCounts[b] ? a : b);
+      
+      let totalTugas = 0;
+      let totalIzin = 0;
+      data.forEach(item => {
+        const alasanLower = (item.alasan || 'Piket Malam').toLowerCase();
+        if (alasanLower.includes('piket') || alasanLower.includes('tugas') || alasanLower.includes('mandiri')) {
+          totalTugas++;
+        } else {
+          totalIzin++;
+        }
+      });
+      
+      let ratioText = "";
+      if (totalTugas > 0 && totalIzin > 0) {
+        const percentage = Math.round((totalIzin / totalTugas) * 100);
+        if(percentage > 50) {
+          ratioText = `<br/><span class="text-danger mt-1 d-block"><i class="ph-fill ph-warning-octagon"></i> <b>Peringatan:</b> Rasio izin/sakit mencapai ${percentage}% dibandingkan kehadiran tugas, ini cukup tinggi dan perlu diwaspadai.</span>`;
+        } else {
+          ratioText = `<br/><span class="text-success mt-1 d-block"><i class="ph-fill ph-check-circle"></i> <b>Aman:</b> Tingkat perizinan terkendali di rasio ${percentage}% dibanding kehadiran tugas.</span>`;
+        }
+      } else if (totalIzin > 0 && totalTugas === 0) {
+        ratioText = `<br/><span class="text-danger mt-1 d-block"><i class="ph-fill ph-warning-octagon"></i> <b>Peringatan:</b> 100% entri adalah Izin/Sakit tanpa ada data kehadiran Tugas/Piket.</span>`;
+      }
+      
+      let text = `Berdasarkan rentang data yang dipilih, <strong>Rayon ${topRayon}</strong> merupakan rayon dengan pergerakan tertinggi (<strong>${rayonCounts[topRayon]} entri</strong>). Alasan terbanyak secara keseluruhan adalah <strong>"${topReason}"</strong> (${reasonCounts[topReason]} kasus). ${ratioText}`;
+      
+      $('#smartInsightsText').html(text);
+    }
+
+    // === Render Tabel Riwayat Laporan ===
+    function renderGuruTable(data) {
+      const tbody = $('#piketHistoryBody');
+      tbody.empty();
+
+      if (data.length === 0) {
+        $('#emptyTableMessage').show();
+        $('.guru-table-container table').hide();
+        return;
+      }
+
+      $('#emptyTableMessage').hide();
+      $('.guru-table-container table').show();
+
+      data.forEach(item => {
+        let displayTime = "-";
+        if (item.tanggal) {
+          try {
+            const parts = item.tanggal.split(" ");
+            const dateParts = parts[0].split("-");
+            const timeParts = parts[1] ? parts[1].substring(0, 5) : "";
+            displayTime = `${dateParts[2]}/${dateParts[1]} - ${timeParts} WIB`;
+          } catch (e) {
+            displayTime = item.tanggal;
+          }
+        }
+
+        const tr = $(`
+          <tr>
+            <td class="fw-medium text-secondary">${displayTime}</td>
+            <td class="fw-bold text-dark">${item.stambuk}</td>
+            <td class="fw-bold text-dark">${item.nama}</td>
+            <td>${item.kelas}</td>
+            <td><span class="badge bg-light text-dark border py-1.5 px-3 rounded-3" style="font-size:12px;">Rayon ${item.rayon}</span></td>
+            <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle py-1 px-2 rounded-2" style="font-size:12px;">${item.alasan || 'Piket Malam'}</span></td>
+          </tr>
+        `);
+        tbody.append(tr);
+      });
+    }
+
+    // === Cetak Laporan Detail Kelas/Rayon ===
+    function printReport() {
+      showLoader("Menyiapkan Laporan Cetak...");
+      
+      const rayonVal = $('#rayonFilterGuru').val();
+      const startVal = $('#startDateFilter').val();
+      const endVal = $('#endDateFilter').val();
+      
+      const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const insightText = $('#smartInsightsText').text();
+
+      let kopSurat = `
+        <div class="print-kop">
+          <h2>YAYASAN AL-MUWAJAH</h2>
+          <p>Laporan Resmi Analitik & Pemantauan Perizinan Santri</p>
+          <p style="font-size:10pt; margin-top:5px; color:#555;">Dicetak pada: ${today}</p>
+        </div>
+        <div style="font-size: 10pt; margin-bottom: 20px;">
+          <strong>Filter Aktif:</strong><br/>
+          Periode: ${(startVal || endVal) ? `${startVal || 'Awal'} s/d ${endVal || 'Akhir'}` : 'Semua Waktu'}<br/>
+          Rayon: ${rayonVal ? rayonVal : 'Semua Rayon'}<br/>
+          Total Entri: ${filteredPiketHistory.length}
+        </div>
+      `;
+
+      let summaryHtml = `
+        <div class="print-section-title">1. Kesimpulan & Analisis Cerdas</div>
+        <p style="font-size: 11pt; text-align: justify; margin-bottom:15px; line-height:1.6;">${insightText}</p>
+        <div class="chart-img-container" id="printChartContainer">
+          <!-- Charts will be injected as images here -->
+        </div>
+      `;
+
+      let tableHtml = `
+        <div class="page-break"></div>
+        <div class="print-section-title">2. Lampiran Data Bukti Rinci</div>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width:50px">No</th>
+              <th style="width:120px">Tanggal & Waktu</th>
+              <th style="width:80px">Stambuk</th>
+              <th>Nama Lengkap</th>
+              <th style="width:60px">Kelas</th>
+              <th style="width:80px">Rayon</th>
+              <th style="width:140px">Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      if (filteredPiketHistory.length === 0) {
+        tableHtml += `<tr><td colspan="7" style="text-align:center; padding: 20px;">Tidak ada data pada rentang filter ini.</td></tr>`;
+      } else {
+        filteredPiketHistory.forEach((item, idx) => {
+          let displayTime = item.tanggal ? item.tanggal.substring(0, 16) : "-";
+          tableHtml += `
+            <tr>
+              <td style="text-align:center">${idx + 1}</td>
+              <td style="text-align:center">${displayTime}</td>
+              <td style="text-align:center">${item.stambuk}</td>
+              <td>${item.nama}</td>
+              <td style="text-align:center">${item.kelas}</td>
+              <td style="text-align:center">${item.rayon}</td>
+              <td>${item.alasan || 'Piket Malam'}</td>
+            </tr>
+          `;
+        });
+      }
+      tableHtml += `</tbody></table>`;
+
+      let signatureHtml = `
+        <div class="print-signature-box">
+          <div>
+            <p>Mengetahui,</p>
+            <br><br><br>
+            <p style="font-weight:bold; text-decoration:underline; margin-bottom:2px;">( .................................... )</p>
+            <p style="font-size: 10pt; margin:0;">Ustadz / Musyrif Piket</p>
+          </div>
+          <div>
+            <p>Kepala Bagian Keamanan,</p>
+            <br><br><br>
+            <p style="font-weight:bold; text-decoration:underline; margin-bottom:2px;">( .................................... )</p>
+            <p style="font-size: 10pt; margin:0;">Penanggung Jawab</p>
+          </div>
+        </div>
+      `;
+
+      const fullHtml = kopSurat + summaryHtml + tableHtml + signatureHtml;
+      $('#dedicatedPrintArea').html(fullHtml);
+
+      // Convert Charts to Images for printing
+      setTimeout(() => {
+        const trendCanvas = document.getElementById('trendChart');
+        const izinCanvas = document.getElementById('jenisIzinChart');
+        
+        if (trendCanvas && izinCanvas) {
+          const trendImg = new Image();
+          trendImg.src = trendCanvas.toDataURL('image/png');
+          
+          const izinImg = new Image();
+          izinImg.src = izinCanvas.toDataURL('image/png');
+          
+          $('#printChartContainer').append(`
+            <div class="chart-item">
+              <div style="font-weight:bold; font-size:10pt; margin-bottom:5px;">Tren Kehadiran & Izin</div>
+              <img src="${trendImg.src}" alt="Tren Chart" />
+            </div>
+            <div class="chart-item">
+              <div style="font-weight:bold; font-size:10pt; margin-bottom:5px;">Distribusi Alasan</div>
+              <img src="${izinImg.src}" alt="Izin Chart" />
+            </div>
+          `);
+        }
+
+        hideLoader();
+        setTimeout(() => {
+          window.print();
+        }, 300);
+      }, 500);
+    }
+
+    // === Export CSV ===
+    function downloadCSV() {
+      if (filteredPiketHistory.length === 0) {
+        showToast("Tidak ada data untuk didownload dalam rentang filter ini.", "warning");
+        return;
+      }
+      
+      const headers = ["Tanggal & Waktu", "Stambuk", "Nama", "Kelas", "Rayon", "Alasan/Keterangan"];
+      let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+      
+      filteredPiketHistory.forEach(item => {
+        const tgl = item.tanggal || "";
+        const stb = item.stambuk || "";
+        const nma = (item.nama || "").replace(/,/g, " "); // remove commas for safe csv
+        const kls = item.kelas || "";
+        const ryn = item.rayon || "";
+        const als = (item.alasan || "Piket Malam").replace(/,/g, " ");
+        
+        csvContent += `${tgl},${stb},${nma},${kls},${ryn},${als}\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Laporan_Perizinan_Muwajah_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // === Loader Helper ===
+    function showLoader(text) {
+      $('#loaderText').text(text);
+      $('#loader').fadeIn(150);
+    }
+
+    function hideLoader() {
+      $('#loader').fadeOut(150);
+    }
+
+    // === Toast Notification System ===
+    function showToast(message, type = "info", duration = 3000) {
+      const id = "toast-" + Date.now();
+      const icon = type === "success" ? '<i class="ph-fill ph-check-circle fs-5"></i>' : (type === "danger" ? '<i class="ph-fill ph-x-circle fs-5"></i>' : '<i class="ph-fill ph-warning fs-5"></i>');
+      const toastHtml = `
+        <div id="${id}" class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'warning')} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body fw-medium py-3 d-flex align-items-center gap-2" style="font-size: 14px;">
+              ${icon} <span>${message}</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>
+      `;
+      $('#toastContainer').append(toastHtml);
+      const el = document.getElementById(id);
+      const t = new bootstrap.Toast(el, { delay: duration });
+      t.show();
+      el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+
+    // === Settings Logic ===
+    let currentReasons = [];
+
+    function loadSettingsUI() {
+      showLoader("Memuat pengaturan...");
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "getSettings" }),
+        contentType: 'text/plain',
+        success: function (response) {
+          hideLoader();
+          if (response.reasons) {
+            currentReasons = response.reasons;
+            renderSettingsList();
+          }
+        }
+      });
+    }
+
+    function renderSettingsList() {
+      const list = $('#settingsList');
+      list.empty();
+      currentReasons.forEach((r, idx) => {
+        list.append(`
+          <div class="d-flex align-items-center justify-content-between p-2 border rounded-3 bg-white">
+            <span class="fw-medium">${r}</span>
+            <button class="btn btn-sm btn-outline-danger" onclick="removeReason(${idx})">Hapus</button>
+          </div>
+        `);
+      });
+    }
+
+    function addReason() {
+      const val = $('#newReasonInput').val().trim();
+      if (val) {
+        currentReasons.push(val);
+        $('#newReasonInput').val('');
+        renderSettingsList();
+      }
+    }
+
+    function removeReason(idx) {
+      currentReasons.splice(idx, 1);
+      renderSettingsList();
+    }
+
+    function saveSettingsUI() {
+      showLoader("Menyimpan...");
+      $.ajax({
+        url: scriptURL,
+        type: 'POST',
+        data: JSON.stringify({ action: "saveSettings", data: { reasons: currentReasons } }),
+        contentType: 'text/plain',
+        success: function (response) {
+          hideLoader();
+          if (response.message) {
+            showToast(response.message, "success");
+            $('#modalSettings').modal('hide');
+          } else {
+            showToast(response.error, "danger");
+          }
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
