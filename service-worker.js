@@ -1,8 +1,11 @@
-const CACHE_NAME = "muwajjah-tracker-v1";
+const CACHE_NAME = "muwajjah-tracker-v2";
 const urlsToCache = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./piket.html",
+  "./manifest-piket.json",
+  "./laporan-piket.html",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
