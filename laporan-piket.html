@@ -1582,6 +1582,7 @@
                                 <th>Kelas</th>
                                 <th>Rayon</th>
                                 <th>Jenis Izin</th>
+                                <th>Detail Keterangan</th>
                             </tr>
                         </thead>
                         <tbody id="piketHistoryBody"></tbody>
@@ -1668,6 +1669,9 @@
                                     <th
                                         style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
                                         Alasan</th>
+                                    <th
+                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
+                                        Detail</th>
                                 </tr>
                             </thead>
                             <tbody id="drillDownTableBody"></tbody>
@@ -1685,7 +1689,7 @@
         // ============================================================
         // GANTI URL INI DENGAN DEPLOYMENT URL GOOGLE APPS SCRIPT ANDA
         // ============================================================
-        const scriptURL = "https://script.google.com/macros/s/AKfycbwzszFyXbjcJH31qy8ep4W6vh3W9gcjtV_rmQjkXKLjbz1KOgGMBRa5zMQ-Ax1q2YQ/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbxc0g9Nf3bPfpBboyVI65e72dpCxU2bMx0HMIwHsfbsBT2mPu7izAIDen6wiKNfaEuE/exec";
         const PIN_USTADZ = "1234";
 
         // ─── Chart.js dark theme defaults ───
@@ -2028,6 +2032,7 @@
             <td><strong>${item.nama}</strong></td>
             <td>${item.kelas}</td>
             <td><span class="badge-izin">${item.alasan || 'Piket Malam'}</span></td>
+            <td><span style="font-size:12px; color:var(--text-dim);">${item.detail || '-'}</span></td>
           </tr>`);
                 });
             }
@@ -2102,6 +2107,7 @@
           <td>${item.kelas}</td>
           <td><span class="badge-rayon">Rayon ${item.rayon}</span></td>
           <td><span class="badge-izin">${item.alasan || 'Piket Malam'}</span></td>
+          <td><span style="font-size:12px; color:var(--text-dim);">${item.detail || '-'}</span></td>
         `;
                 tbody.appendChild(tr);
             });

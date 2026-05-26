@@ -70,10 +70,10 @@ function autoSetupDatabase(forceReset = false) {
     }
     
     // Tulis Header
-    shPiket.appendRow(["Tanggal", "Stambuk", "Nama", "Kelas", "Rayon", "Status", "Alasan"]);
+    shPiket.appendRow(["Tanggal", "Stambuk", "Nama", "Kelas", "Rayon", "Status", "Alasan", "Detail Keterangan"]);
     
     // Desain Header Premium (Warna Orange Brand)
-    const range = shPiket.getRange("A1:G1");
+    const range = shPiket.getRange("A1:H1");
     range.setFontWeight("bold")
          .setBackground("#ffedd5")
          .setFontColor("#ea580c")
@@ -99,7 +99,7 @@ function getSantri() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
     // Ambil stambuk yang sudah piket HARI INI
-    const checkedInToday = new Set();
+    const checkedInToday = {};
     const shPiket = ss.getSheetByName("Riwayat Perizinan");
     if (shPiket) {
       const piketData = shPiket.getDataRange().getValues();
@@ -119,7 +119,7 @@ function getSantri() {
           }
         }
         if (dateStr === todayStr && row[1]) {
-          checkedInToday.add(String(row[1]));
+          checkedInToday[String(row[1])] = String(row[6] || "Terdaftar");
         }
       });
     }
@@ -136,7 +136,8 @@ function getSantri() {
         kelas: String(row[2] || ""),
         rayon: String(row[3] || ""),
         tipe: String(row[4] || ""),
-        sudahPiket: checkedInToday.has(stambuk) // Tandai jika stambuk sudah mendaftar hari ini
+        sudahPiket: !!checkedInToday[stambuk], // Tandai jika stambuk sudah mendaftar hari ini
+        alasanPiket: checkedInToday[stambuk] || "" // What they registered for
       };
     }).filter(s => s.stambuk || s.nama);
 
@@ -175,7 +176,8 @@ function getPiketHistory() {
         kelas: String(row[3] || ""),
         rayon: String(row[4] || ""),
         status: String(row[5] || "Hadir"),
-        alasan: String(row[6] || "Piket Malam")
+        alasan: String(row[6] || "Piket Malam"),
+        detail: String(row[7] || "")
       };
     }).reverse();
     
@@ -226,7 +228,8 @@ function simpanPiket(dataPiket) {
       s.kelas || "",
       s.rayon || "",
       "Hadir",
-      s.alasan || "Piket Malam"
+      s.alasan || "Piket Malam",
+      s.detail || ""
     ]);
 
     const lastRow = sh.getLastRow();
