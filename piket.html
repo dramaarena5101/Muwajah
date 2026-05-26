@@ -372,6 +372,28 @@
             margin-bottom: 12px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            transition: var(--t);
+        }
+        
+        .rayon-group-header:active {
+            opacity: 0.7;
+        }
+        
+        .rayon-group-chevron {
+            color: var(--text-muted);
+            font-size: 16px;
+            transition: transform 0.2s ease;
+            margin-left: 6px;
+        }
+        
+        .rayon-group-section.collapsed .rayon-group-chevron {
+            transform: rotate(-90deg);
+        }
+        
+        .rayon-group-section.collapsed .rayon-grid {
+            display: none !important;
         }
 
         .rayon-group-icon {
@@ -1325,16 +1347,17 @@
                 const safeId = tipeLabel.replace(/[^a-zA-Z0-9]/g, '_');
 
                 const section = $(`
-                  <div class="rayon-group-section" data-group="${safeId}">
-                    <div class="rayon-group-header">
+                  <div class="rayon-group-section collapsed" data-group="${safeId}">
+                    <div class="rayon-group-header" onclick="$(this).parent().toggleClass('collapsed')">
                       <div class="rayon-group-icon" style="background:${p.bg}; color:${p.color};">
                         <i class="ph-duotone ${p.icon}"></i>
                       </div>
-                      <div>
+                      <div style="flex-grow:1;">
                         <div class="rayon-group-label" style="color:${p.color};">${tipeLabel}</div>
                         <div class="rayon-group-desc">${rayons.length} rayon terdaftar</div>
                       </div>
                       <span class="rayon-group-count">${rayons.length} rayon</span>
+                      <i class="ph-bold ph-caret-down rayon-group-chevron"></i>
                     </div>
                     <div class="rayon-grid"></div>
                   </div>
@@ -1412,7 +1435,8 @@
                 $('#rayonContainer .rayon-group-section').each(function () {
                     if (!q) {
                         $(this).show();
-                        return;
+                    } else {
+                        $(this).removeClass('collapsed'); // Expand automatically when searching
                     }
                     // Cannot use :visible here because if the parent section is hidden, 
                     // jQuery considers all children hidden. Use css display check instead.
