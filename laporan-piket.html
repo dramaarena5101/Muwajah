@@ -1655,24 +1655,7 @@
                 <div class="modal-body px-4 pb-4">
                     <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;">
                         <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th
-                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
-                                        Tanggal</th>
-                                    <th
-                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
-                                        Nama</th>
-                                    <th
-                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
-                                        Kelas</th>
-                                    <th
-                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
-                                        Alasan</th>
-                                    <th
-                                        style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">
-                                        Detail</th>
-                                </tr>
+                            <thead id="drillDownThead">
                             </thead>
                             <tbody id="drillDownTableBody"></tbody>
                         </table>
@@ -2015,7 +1998,9 @@
         function showDrillDownModal(title, type, value) {
             $('#drillDownTitle').text(`Rincian: ${title}`);
             const tbody = $('#drillDownTableBody');
+            const thead = $('#drillDownThead');
             tbody.empty();
+            
             const rows = filteredPiketHistory.filter(item => {
                 if (type === 'date') return item.tanggal && item.tanggal.startsWith(value);
                 if (type === 'reason') return (item.alasan || 'Piket Malam') === value;
@@ -2023,17 +2008,63 @@
                 if (type === 'kelas') return String(item.kelas) === String(value);
                 return false;
             });
+            
+            // Set dynamic header for aggregated view
+            thead.html(`
+                <tr>
+                    <th style="background: var(--surface2); color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">Santri</th>
+                    <th style="background: var(--surface2); color: var(--success); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">Piket / Tugas</th>
+                    <th style="background: var(--surface2); color: var(--danger); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 12px 14px; letter-spacing: 0.6px;">Izin / Sakit</th>
+                </tr>
+            `);
+
             if (!rows.length) {
-                tbody.html('<tr><td colspan="4" style="text-align:center; padding: 24px; color: var(--text-dim);">Tidak ada data tersedia.</td></tr>');
+                tbody.html('<tr><td colspan="3" style="text-align:center; padding: 24px; color: var(--text-dim);">Tidak ada data tersedia.</td></tr>');
             } else {
+                // Aggregate by Santri
+                const santriMap = {};
                 rows.forEach(item => {
+                    const key = item.nama + '|||' + (item.kelas || '-');
+                    if (!santriMap[key]) {
+                        santriMap[key] = {
+                            nama: item.nama,
+                            kelas: item.kelas || '-',
+                            piketTotal: 0,
+                            piketDetails: {},
+                            izinTotal: 0,
+                            izinDetails: {}
+                        };
+                    }
+                    const a = (item.alasan || 'Piket Malam').toLowerCase();
+                    const raw = item.alasan || 'Piket Malam';
+                    if (a.includes('piket') || a.includes('tugas') || a.includes('mandiri')) {
+                        santriMap[key].piketTotal++;
+                        santriMap[key].piketDetails[raw] = (santriMap[key].piketDetails[raw] || 0) + 1;
+                    } else {
+                        santriMap[key].izinTotal++;
+                        santriMap[key].izinDetails[raw] = (santriMap[key].izinDetails[raw] || 0) + 1;
+                    }
+                });
+
+                Object.values(santriMap).sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
+                    const formatDetails = (details) => Object.entries(details).map(([k,v]) => `${v}× ${k}`).join('<br>');
+                    const pDet = formatDetails(s.piketDetails) || '-';
+                    const iDet = formatDetails(s.izinDetails) || '-';
+                    
                     tbody.append(`<tr>
-            <td>${item.tanggal ? item.tanggal.split(" ")[0] : "—"}</td>
-            <td><strong>${item.nama}</strong></td>
-            <td>${item.kelas}</td>
-            <td><span class="badge-izin">${item.alasan || 'Piket Malam'}</span></td>
-            <td><span style="font-size:12px; color:var(--text-dim);">${item.detail || '-'}</span></td>
-          </tr>`);
+                        <td style="vertical-align: top;">
+                            <strong>${s.nama}</strong><br>
+                            <span style="font-size:11px;color:var(--text-dim);">Kelas ${s.kelas}</span>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div style="font-weight:800; color:var(--success); font-size:14px; margin-bottom:4px;">${s.piketTotal} kali</div>
+                            <div style="font-size:11px; color:var(--text-dim); line-height:1.4;">${pDet}</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <div style="font-weight:800; color:var(--danger); font-size:14px; margin-bottom:4px;">${s.izinTotal} kali</div>
+                            <div style="font-size:11px; color:var(--text-dim); line-height:1.4;">${iDet}</div>
+                        </td>
+                    </tr>`);
                 });
             }
             new bootstrap.Modal(document.getElementById('modalDrillDown')).show();
