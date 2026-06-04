@@ -16,6 +16,7 @@ function doPost(e) {
     if (action === "getPiketHistory") return getPiketHistory();
     if (action === "getSettings") return getSettings();
     if (action === "saveSettings") return saveSettings(req.data);
+    if (action === "getListRayon") return getListRayon();
     if (action === "setupDatabase") {
       autoSetupDatabase(true);
       return outputJSON({ message: "✅ Inisialisasi/Reset database berhasil dilakukan!" });
@@ -184,6 +185,30 @@ function getPiketHistory() {
     return outputJSON(hasil);
   } catch (err) {
     return outputJSON({ error: "Gagal memuat riwayat piket: " + err.message });
+  }
+}
+
+// === Ambil List Rayon dari Sheet "List Rayon" ===
+function getListRayon() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName("List Rayon");
+    if (!sh) return outputJSON([]);
+    
+    const data = sh.getDataRange().getValues();
+    data.shift(); // Buang header
+    
+    const hasil = data.map(row => {
+      return {
+        id: String(row[0] || ""),
+        nama_rayon: String(row[1] || ""),
+        tipe: String(row[2] || "")
+      };
+    }).filter(r => r.nama_rayon !== "");
+    
+    return outputJSON(hasil);
+  } catch (err) {
+    return outputJSON({ error: "Gagal mengambil List Rayon: " + err.message });
   }
 }
 

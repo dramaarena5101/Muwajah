@@ -562,6 +562,126 @@
             color: var(--text-dim);
         }
 
+        /* ─── TRACKING CARD ─── */
+        .tracking-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+        }
+
+        .tracking-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .tracking-stats {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-dim);
+            background: var(--surface2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .tracking-badges-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .tracking-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: var(--t);
+            border: 1px solid transparent;
+        }
+
+        .tracking-badge.sudah {
+            background: rgba(63, 185, 80, 0.1);
+            color: var(--success);
+            border-color: rgba(63, 185, 80, 0.3);
+        }
+
+        .tracking-badge.sudah:hover {
+            background: rgba(63, 185, 80, 0.2);
+            box-shadow: 0 4px 12px rgba(63, 185, 80, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .tracking-badge.belum {
+            background: rgba(248, 81, 73, 0.05);
+            color: var(--text-dim);
+            border-color: rgba(248, 81, 73, 0.3);
+        }
+
+        .tracking-badge.belum:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(248, 81, 73, 0.1);
+            box-shadow: 0 4px 12px rgba(248, 81, 73, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .badge-filter {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 6px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            margin-right: 6px;
+            transition: var(--t);
+        }
+
+        .badge-filter:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        .badge-filter.active {
+            background: var(--surface3);
+            color: var(--text);
+            border-color: var(--text-dim);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .tracking-select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 24px 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--t);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        .tracking-select:focus, .tracking-select:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+            outline: none;
+        }
+
         /* ─── CHART CARDS ─── */
         .chart-card {
             background: var(--surface);
@@ -1456,13 +1576,13 @@
                 <div class="col-md-6">
                     <div class="filter-label">Rentang Cepat</div>
                     <div class="shortcut-pills">
-                        <button class="shortcut-pill date-shortcut" onclick="setDateShortcut('today', this)">Hari
+                        <button class="shortcut-pill date-shortcut active" onclick="setDateShortcut('today', this)">Hari
                             Ini</button>
                         <button class="shortcut-pill date-shortcut" onclick="setDateShortcut('7days', this)">7
                             Hari</button>
                         <button class="shortcut-pill date-shortcut" onclick="setDateShortcut('30days', this)">1
                             Bulan</button>
-                        <button class="shortcut-pill date-shortcut active" onclick="setDateShortcut('all', this)">Semua
+                        <button class="shortcut-pill date-shortcut" onclick="setDateShortcut('all', this)">Semua
                             Data</button>
                     </div>
                 </div>
@@ -1507,6 +1627,50 @@
                 <div>
                     <div class="insights-label">AI Wawasan Cerdas</div>
                     <div id="smartInsightsText">Sedang mengumpulkan data analitik...</div>
+                </div>
+            </div>
+
+            <!-- Tracking Card -->
+            <div class="tracking-card mb-4">
+                <div class="tracking-head">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="insights-icon-wrap"
+                            style="width:36px; height:36px; font-size:18px; color:var(--success); border-color:rgba(63, 185, 80, 0.3); background:rgba(63, 185, 80, 0.1);">
+                            <i class="ph-bold ph-radar"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold" style="font-size: 14px; color: var(--text);">Pantauan Input Rayon
+                            </h6>
+                            <div style="font-size: 11px; color: var(--text-dim);">Berdasarkan rentang filter tanggal
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tracking-stats" id="trackingStatsText">0/0 Rayon</div>
+                </div>
+                <div class="progress mb-3" style="height: 8px; background: var(--surface2); border-radius: 10px;">
+                    <div class="progress-bar" id="trackingProgressBar" role="progressbar"
+                        style="width: 0%; background: var(--success); border-radius: 10px; transition: width 0.5s ease;">
+                    </div>
+                </div>
+                <div class="tracking-filters mb-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                        <div>
+                            <button class="badge-filter active" onclick="filterTracking('all', this)">Semua</button>
+                            <button class="badge-filter" onclick="filterTracking('sudah', this)">Sudah Input</button>
+                            <button class="badge-filter" onclick="filterTracking('belum', this)">Belum Input</button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <select id="trackingTipeRayon" class="tracking-select" onchange="renderRayonTracker(filteredPiketHistory)">
+                                <option value="">Semua Tipe</option>
+                            </select>
+                            <select id="trackingJenisIzin" class="tracking-select" onchange="renderRayonTracker(filteredPiketHistory)">
+                                <option value="">Semua Laporan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="tracking-badges-container" id="trackingBadgesContainer">
+                    <div style="color:var(--text-dim); font-size:12px; padding:10px;">Memuat data rayon...</div>
                 </div>
             </div>
 
@@ -1672,7 +1836,7 @@
         // ============================================================
         // GANTI URL INI DENGAN DEPLOYMENT URL GOOGLE APPS SCRIPT ANDA
         // ============================================================
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxc0g9Nf3bPfpBboyVI65e72dpCxU2bMx0HMIwHsfbsBT2mPu7izAIDen6wiKNfaEuE/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbxThgbx9OgKm7ol8QlIrc5bHh1hv7qpswWN4xVewZmRPt3E6b8ZzUCdmP1POB0_vo6l/exec";
         const PIN_USTADZ = "1234";
 
         // ─── Chart.js dark theme defaults ───
@@ -1682,6 +1846,8 @@
         let uniqueRayons = [];
         let piketHistory = [];
         let filteredPiketHistory = [];
+        let listRayonOfficial = [];
+        let currentTrackingFilter = 'all';
 
         // ─── PIN LOGIC ───
         let pinBuffer = "";
@@ -1755,7 +1921,11 @@
         });
 
         function initializeDashboard() {
+            const todayBtn = document.querySelector('.date-shortcut[onclick*="today"]');
+            setDateShortcut('today', todayBtn);
+            
             fetchRayonData();
+            fetchListRayon();
             fetchHistoryData();
         }
 
@@ -1780,6 +1950,22 @@
                     const select = $('#rayonFilterGuru');
                     select.find('option:not(:first)').remove();
                     rayons.forEach(r => select.append(`<option value="${r}">Rayon ${r}</option>`));
+                }
+            });
+        }
+
+        function fetchListRayon() {
+            $.ajax({
+                url: scriptURL, type: 'POST',
+                data: JSON.stringify({ action: "getListRayon" }),
+                contentType: 'text/plain',
+                success: function (response) {
+                    if (response && !response.error && response.length > 0) {
+                        listRayonOfficial = response;
+                        if (typeof filteredPiketHistory !== 'undefined') {
+                            renderRayonTracker(filteredPiketHistory);
+                        }
+                    }
                 }
             });
         }
@@ -1844,6 +2030,104 @@
             renderGuruTable(filteredPiketHistory);
             renderAnalyticsCharts(filteredPiketHistory);
             renderLeaderboards(filteredPiketHistory);
+            renderRayonTracker(filteredPiketHistory);
+        }
+
+        // ─── RAYON TRACKER ───
+        function filterTracking(type, btn) {
+            currentTrackingFilter = type;
+            $('.badge-filter').removeClass('active');
+            $(btn).addClass('active');
+            renderRayonTracker(filteredPiketHistory);
+        }
+
+        function filterByRayonFromTracking(rayon) {
+            $('#rayonFilterGuru').val(rayon);
+            applyGlobalFilters();
+            showToast(`Menampilkan data khusus Rayon ${rayon}`, "success");
+            switchTab('tabel');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderRayonTracker(data) {
+            let tipeSelect = $('#trackingTipeRayon');
+            let izinSelect = $('#trackingJenisIzin');
+            
+            // Build options for Tipe Rayon dynamically if available
+            if (tipeSelect.find('option').length <= 1 && listRayonOfficial.length > 0) {
+                const uniqueTipe = [...new Set(listRayonOfficial.map(r => r.tipe).filter(Boolean))].sort();
+                uniqueTipe.forEach(t => {
+                    tipeSelect.append(`<option value="${t}">${t}</option>`);
+                });
+                tipeSelect.val('Rayon');
+            }
+
+            // Build options for Jenis Izin dynamically
+            if (izinSelect.find('option').length <= 1 && piketHistory.length > 0) {
+                const uniqueIzin = [...new Set(piketHistory.map(item => item.alasan || 'Piket Malam'))].sort();
+                uniqueIzin.forEach(izin => {
+                    izinSelect.append(`<option value="${izin}">${izin}</option>`);
+                });
+                izinSelect.val('Piket Malam');
+            }
+
+            const tipeRayonFilter = tipeSelect.val() || '';
+            const jenisIzinFilter = izinSelect.val() || '';
+
+            let filteredOfficial = listRayonOfficial;
+            if (tipeRayonFilter) {
+                filteredOfficial = listRayonOfficial.filter(r => (r.tipe || '').toLowerCase() === tipeRayonFilter.toLowerCase());
+            }
+
+            let rayons = [];
+            if (filteredOfficial.length > 0 || (listRayonOfficial.length > 0 && tipeRayonFilter)) {
+                rayons = filteredOfficial.map(r => r.nama_rayon);
+            } else if (listRayonOfficial.length > 0) {
+                rayons = listRayonOfficial.map(r => r.nama_rayon);
+            } else {
+                rayons = uniqueRayons;
+            }
+            
+            rayons = [...new Set(rayons)].sort();
+            
+            const inputtedRayons = new Set();
+            data.forEach(item => {
+                if (!item.rayon) return;
+                const alasan = item.alasan || 'Piket Malam';
+                if (jenisIzinFilter && alasan !== jenisIzinFilter) return;
+                inputtedRayons.add(String(item.rayon));
+            });
+            
+            let sudahCount = 0;
+            rayons.forEach(r => {
+                if (inputtedRayons.has(r)) sudahCount++;
+            });
+            
+            const total = rayons.length;
+            const pct = total === 0 ? 0 : Math.round((sudahCount / total) * 100);
+            
+            $('#trackingStatsText').text(`${sudahCount}/${total} Rayon (${pct}%)`);
+            $('#trackingProgressBar').css('width', `${pct}%`);
+            
+            const container = $('#trackingBadgesContainer');
+            container.empty();
+            
+            if (total === 0) {
+                container.html('<div style="color:var(--text-dim); font-size:12px; padding:10px;">Menunggu data rayon...</div>');
+                return;
+            }
+            
+            rayons.forEach(r => {
+                const isSudah = inputtedRayons.has(r);
+                if (currentTrackingFilter === 'sudah' && !isSudah) return;
+                if (currentTrackingFilter === 'belum' && isSudah) return;
+                
+                const badgeClass = isSudah ? 'sudah' : 'belum';
+                const icon = isSudah ? '<i class="ph-bold ph-check"></i>' : '<i class="ph-bold ph-warning-circle"></i>';
+                
+                const el = $(`<div class="tracking-badge ${badgeClass}" onclick="filterByRayonFromTracking('${r}')">${icon} ${r}</div>`);
+                container.append(el);
+            });
         }
 
         // ─── STATS ───
@@ -2000,7 +2284,7 @@
             const tbody = $('#drillDownTableBody');
             const thead = $('#drillDownThead');
             tbody.empty();
-            
+
             const rows = filteredPiketHistory.filter(item => {
                 if (type === 'date') return item.tanggal && item.tanggal.startsWith(value);
                 if (type === 'reason') return (item.alasan || 'Piket Malam') === value;
@@ -2008,7 +2292,7 @@
                 if (type === 'kelas') return String(item.kelas) === String(value);
                 return false;
             });
-            
+
             // Set dynamic header for aggregated view
             thead.html(`
                 <tr>
@@ -2046,11 +2330,11 @@
                     }
                 });
 
-                Object.values(santriMap).sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
-                    const formatDetails = (details) => Object.entries(details).map(([k,v]) => `${v}× ${k}`).join('<br>');
+                Object.values(santriMap).sort((a, b) => a.nama.localeCompare(b.nama)).forEach(s => {
+                    const formatDetails = (details) => Object.entries(details).map(([k, v]) => `${v}× ${k}`).join('<br>');
                     const pDet = formatDetails(s.piketDetails) || '-';
                     const iDet = formatDetails(s.izinDetails) || '-';
-                    
+
                     tbody.append(`<tr>
                         <td style="vertical-align: top;">
                             <strong>${s.nama}</strong><br>
