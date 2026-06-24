@@ -376,22 +376,22 @@
             user-select: none;
             transition: var(--t);
         }
-        
+
         .rayon-group-header:active {
             opacity: 0.7;
         }
-        
+
         .rayon-group-chevron {
             color: var(--text-muted);
             font-size: 16px;
             transition: transform 0.2s ease;
             margin-left: 6px;
         }
-        
+
         .rayon-group-section.collapsed .rayon-group-chevron {
             transform: rotate(-90deg);
         }
-        
+
         .rayon-group-section.collapsed .rayon-grid {
             display: none !important;
         }
@@ -1161,7 +1161,7 @@
         // ============================================================
         // GANTI URL INI DENGAN DEPLOYMENT URL GOOGLE APPS SCRIPT ANDA
         // ============================================================
-        const scriptURL = "https://script.google.com/macros/s/AKfycbxc0g9Nf3bPfpBboyVI65e72dpCxU2bMx0HMIwHsfbsBT2mPu7izAIDen6wiKNfaEuE/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbzl5MBZ7tEu8mpXrS9UanBM9UadhgB_eGvycyXXM_fFn7vqJii4v8ZLASASSx51dM9C/exec";
 
         let allSantri = [];
         let uniqueRayons = [];
@@ -1475,7 +1475,7 @@
 
             const jenisIzin = $('#jenisIzin').val() || '';
             const isPiketMalam = jenisIzin.toLowerCase() === 'piket malam';
-            
+
             let piketCount = 0;
             if (isPiketMalam) {
                 allSantri.forEach(s => {
