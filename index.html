@@ -1150,12 +1150,17 @@
           <h1 class="app-title d-flex align-items-center gap-2"><i class="ph-duotone ph-book-open-text"></i> Muwajjah Tracker</h1>
           <p class="app-subtitle">Sistem Pantauan Pembelajaran Santri Terpadu</p>
         </div>
-        <button class="btn-theme" id="btnTheme" title="Ganti Tema" aria-label="Toggle dark mode">
-          <svg id="iconTheme" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-        </button>
+        <div class="d-flex gap-2">
+          <button class="btn-theme" title="Dashboard Wali Kelas" onclick="showDashboardPinModal()" style="display:flex; align-items:center; justify-content:center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; width:36px; height:36px; color:var(--text); cursor:pointer;">
+            <i class="ph-bold ph-chart-bar" style="font-size: 18px;"></i>
+          </button>
+          <button class="btn-theme" id="btnTheme" title="Ganti Tema" aria-label="Toggle dark mode">
+            <svg id="iconTheme" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1313,7 +1318,7 @@
     ============================================ -->
     <div id="progressWrap"></div>
 
-  </div>
+  </div> <!-- End of main container -->
 
   <!-- ============================================
        FLOATING SAVE BUTTON
@@ -1426,6 +1431,182 @@
     let progressSantri = [];
     let pelajaranData = {};
     let activeFilter = "all";   // for history filter
+
+    // Dashboard State
+    let globalDashboardData = [];
+    let chartPelajaranInstance = null;
+    let chartKelasInstance = null;
+    const PIN_DASHBOARD = "1234";
+
+    // =============================================
+    // DASHBOARD WALI KELAS LOGIC
+    // =============================================
+    function showDashboardPinModal() {
+      document.getElementById("inputPinDashboard").value = "";
+      new bootstrap.Modal(document.getElementById("modalPinDashboard")).show();
+    }
+
+    async function verifyDashboardPin() {
+      const pin = document.getElementById("inputPinDashboard").value;
+      if (pin !== PIN_DASHBOARD) {
+        alert("PIN Salah!");
+        return;
+      }
+      bootstrap.Modal.getInstance(document.getElementById("modalPinDashboard")).hide();
+      openDashboard();
+    }
+
+    async function openDashboard() {
+      // Sembunyikan UI utama, tampilkan dashboard
+      document.querySelectorAll(".container.py-3")[0].style.display = "none";
+      document.getElementById("dashboardSection").style.display = "block";
+      
+      const btnBtn = document.getElementById("dashTotalLaporan");
+      btnBtn.innerHTML = '<i class="ph-duotone ph-spinner ph-spin"></i>';
+      
+      try {
+        const res = await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getAllProgress" })
+        });
+        const data = await res.json();
+        globalDashboardData = data;
+        renderDashboard(data);
+      } catch (err) {
+        alert("Gagal mengambil data dashboard.");
+        closeDashboard();
+      }
+    }
+
+    function closeDashboard() {
+      document.getElementById("dashboardSection").style.display = "none";
+      document.querySelectorAll(".container.py-3")[0].style.display = "block";
+    }
+
+    function renderDashboard(data) {
+      document.getElementById("dashTotalLaporan").innerText = data.length;
+      
+      // Grouping
+      const santriSet = new Set();
+      const kelasCount = {};
+      const pelajaranCount = {};
+      
+      data.forEach(d => {
+        if (d.stambuk) santriSet.add(d.stambuk);
+        if (d.kelas) kelasCount[d.kelas] = (kelasCount[d.kelas] || 0) + 1;
+        if (d.pelajaran) pelajaranCount[d.pelajaran] = (pelajaranCount[d.pelajaran] || 0) + 1;
+      });
+      
+      document.getElementById("dashTotalSantri").innerText = santriSet.size;
+      document.getElementById("dashTotalKelas").innerText = Object.keys(kelasCount).length;
+      document.getElementById("dashTotalPelajaran").innerText = Object.keys(pelajaranCount).length;
+      
+      renderChartPelajaran(pelajaranCount);
+      renderChartKelas(kelasCount);
+    }
+    
+    function renderChartPelajaran(dataObj) {
+      const ctx = document.getElementById('chartPelajaran').getContext('2d');
+      if (chartPelajaranInstance) chartPelajaranInstance.destroy();
+      
+      // Sort data for better presentation
+      const sortedKeys = Object.keys(dataObj).sort((a,b) => dataObj[b] - dataObj[a]);
+      const sortedValues = sortedKeys.map(k => dataObj[k]);
+
+      chartPelajaranInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sortedKeys,
+          datasets: [{
+            label: 'Jumlah Laporan',
+            data: sortedValues,
+            backgroundColor: '#ea580c',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          onClick: (e, elements) => {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              const label = sortedKeys[idx];
+              drillDownDashboard('pelajaran', label);
+            }
+          }
+        }
+      });
+    }
+
+    function renderChartKelas(dataObj) {
+      const ctx = document.getElementById('chartKelas').getContext('2d');
+      if (chartKelasInstance) chartKelasInstance.destroy();
+      
+      const sortedKeys = Object.keys(dataObj).sort();
+      const sortedValues = sortedKeys.map(k => dataObj[k]);
+
+      chartKelasInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sortedKeys,
+          datasets: [{
+            label: 'Total Laporan',
+            data: sortedValues,
+            backgroundColor: '#0ea5e9',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          onClick: (e, elements) => {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              const label = sortedKeys[idx];
+              drillDownDashboard('kelas', label);
+            }
+          }
+        }
+      });
+    }
+
+    function drillDownDashboard(filterType, filterValue) {
+      const filtered = globalDashboardData.filter(d => d[filterType] === filterValue);
+      document.getElementById("modalDetailTitle").innerText = `Detail: ${filterValue} (${filtered.length} Data)`;
+      
+      const tbody = document.getElementById("detailDashboardBody");
+      tbody.innerHTML = "";
+      
+      // Sort by tanggal descending
+      filtered.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal));
+      
+      filtered.forEach(d => {
+        let dateStr = "";
+        try {
+           const dt = new Date(d.tanggal);
+           if(isNaN(dt.getTime())) dateStr = d.tanggal;
+           else dateStr = `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
+        } catch(e) { dateStr = d.tanggal; }
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="white-space:nowrap;">${dateStr}</td>
+            <td class="fw-bold">${d.nama}</td>
+            <td>${d.kelas}</td>
+            <td>${d.pelajaran}</td>
+            <td><span style="font-size:11px;" class="badge bg-light text-dark border mb-1">${d.jenis}</span><br/>${d.judul}</td>
+          </tr>
+        `;
+      });
+      
+      new bootstrap.Modal(document.getElementById("modalDetailDashboard")).show();
+    }
+
+    // =============================================
+    // END DASHBOARD LOGIC
+    // =============================================
 
     // =============================================
     // DARK MODE
@@ -2206,3 +2387,5 @@
 </body>
 
 </html>
+
+

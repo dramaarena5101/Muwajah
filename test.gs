@@ -9,6 +9,7 @@
       if (action === "getPelajaran") return getPelajaran();
       if (action === "simpanData") return simpanData(req.data);
       if (action === "getProgress") return getProgress(req.stambuk);
+      if (action === "getAllProgress") return getAllProgress();
 
       return outputJSON({ error: "Action tidak dikenal" });
     } catch (err) {
@@ -150,6 +151,38 @@ function simpanData(d) {
             jenis: row[8],
             materi: row[9]
           });
+        }
+      });
+    }
+
+    return outputJSON(hasil);
+  }
+
+  // === Ambil semua progress (Untuk Dashboard) ===
+  function getAllProgress() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName("Progress Santri");
+    if (!sh) return outputJSON([]); // Safety
+    const data = sh.getDataRange().getValues();
+    const hasil = [];
+
+    if (data.length > 0) {
+      const headers = data.shift();
+      data.forEach(row => {
+        // Hanya ambil data yang valid (ada stambuk dan nama)
+        if (row[1] && row[2]) {
+            hasil.push({
+                tanggal: row[0],
+                stambuk: row[1],
+                nama: row[2],
+                kelas: row[3],
+                rayon: row[4],
+                ustadz: row[5],
+                pelajaran: row[6],
+                judul: row[7],
+                jenis: row[8],
+                materi: row[9]
+            });
         }
       });
     }
