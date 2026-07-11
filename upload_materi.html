@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data Materi ke Firebase</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            font-family: monospace;
+            white-space: pre;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title text-primary">Migrasi Data Pelajaran dari Excel ke Firebase</h3>
+                <p class="text-muted">
+                    Pastikan Anda telah mengisi <code>firebaseConfig</code> di dalam kode file HTML ini sebelum
+                    menggunakannya.
+                </p>
+
+                <ol>
+                    <li>Buka Spreadsheet/Excel Anda.</li>
+                    <li>Copy data dari kolom <strong>id, Pelajaran, Judul, dan Type</strong> (jangan copy baris
+                        headernya/judul kolomnya, cukup isinya saja).</li>
+                    <li>Paste ke dalam kotak di bawah ini. Pastikan jarak antar kolom rapi (terpisahkan oleh tab
+                        otomatis dari Excel).</li>
+                    <li>Klik <strong>Upload ke Firebase</strong>.</li>
+                </ol>
+
+                <textarea id="excelData" class="form-control mb-3"
+                    placeholder="Paste data dari Excel di sini..."></textarea>
+
+                <button id="btnUpload" class="btn btn-primary w-100 py-2">Mulai Upload ke Firebase</button>
+
+                <div id="statusArea" class="mt-4" style="display:none;">
+                    <h5>Status Log:</h5>
+                    <pre id="logArea" class="bg-dark text-light p-3 rounded"
+                        style="max-height:300px; overflow-y:auto;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // ==========================================
+        // ⚠️ COPY-PASTE CONFIG FIREBASE ANDA DI SINI
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlS-quX7hdW4ZsOBCe7eJfcfT6liX4pEY",
+            authDomain: "muwajah-5ed1d.firebaseapp.com",
+            projectId: "muwajah-5ed1d",
+            storageBucket: "muwajah-5ed1d.firebasestorage.app",
+            messagingSenderId: "894973047701",
+            appId: "1:894973047701:web:65961fb3b26326b7733c9c"
+        };
+
+        let app, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+        } catch (e) {
+            log("❌ Error Inisialisasi Firebase. Pastikan firebaseConfig sudah diisi!", "text-danger");
+        }
+
+        function log(msg, colorClass = "") {
+            const area = document.getElementById("logArea");
+            document.getElementById("statusArea").style.display = "block";
+            area.innerHTML += `<div class="${colorClass}">${msg}</div>`;
+            area.scrollTop = area.scrollHeight;
+        }
+
+        document.getElementById("btnUpload").addEventListener("click", async () => {
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                alert("HARAP ISI FIREBASE CONFIG TERLEBIH DAHULU DI DALAM KODE FILE INI!");
+                return;
+            }
+
+            const rawText = document.getElementById("excelData").value.trim();
+            if (!rawText) {
+                alert("Data kosong. Paste dulu dari Excel.");
+                return;
+            }
+
+            log("Memulai proses parsing data...");
+            const btn = document.getElementById("btnUpload");
+            btn.disabled = true;
+            btn.innerText = "Memproses...";
+
+            try {
+                // 1. Parsing dari TSV (Tab Separated Values - Format Copy Paste Excel)
+                const baris = rawText.split('\n');
+                const groupedData = {};
+
+                baris.forEach((barisStr, i) => {
+                    const kolom = barisStr.split('\t');
+                    if (kolom.length >= 4) {
+                        const id = kolom[0].trim();
+                        const pelajaran = kolom[1].trim();
+                        const judul = kolom[2].trim();
+                        const tipe = kolom[3].trim(); // Judul atau Isi
+
+                        if (!groupedData[pelajaran]) {
+                            groupedData[pelajaran] = [];
+                        }
+
+                        groupedData[pelajaran].push({
+                            id: id,
+                            judul: judul,
+                            tipe: tipe
+                        });
+                    }
+                });
+
+                const totalPelajaran = Object.keys(groupedData).length;
+                log(`Berhasil mengelompokkan menjadi ${totalPelajaran} Mata Pelajaran. Menyiapkan pengiriman...`, "text-info");
+
+                // 2. Upload ke Firebase (Koleksi: pelajaran_master)
+                const batch = writeBatch(db);
+
+                for (const [namaPelajaran, materiArray] of Object.entries(groupedData)) {
+                    // Gunakan nama pelajaran sebagai Document ID
+                    const docRef = doc(db, "pelajaran_master", namaPelajaran);
+
+                    batch.set(docRef, {
+                        materi: materiArray,
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    log(`-> Menyiapkan data pelajaran: ${namaPelajaran} (${materiArray.length} materi)`);
+                }
+
+                log("🚀 Mengirim seluruh data ke Firebase...", "text-warning");
+                await batch.commit();
+
+                log("✅ BERHASIL! Semua data pelajaran telah tersimpan di Firestore.", "text-success");
+                alert("Berhasil! Semua data pelajaran telah di-upload.");
+
+            } catch (err) {
+                log(`❌ GAGAL: ${err.message}`, "text-danger");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Selesai (Upload Ulang?)";
+            }
+        });
+    </script>
+</body>
+
+</html>
