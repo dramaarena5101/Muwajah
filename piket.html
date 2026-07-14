@@ -1270,6 +1270,9 @@
                     // Build rayon → Set<tipe> map (only for valid rayons)
                     const rayonMap = {};
                     allSantri.forEach(s => {
+                        if (s.rayon && typeof s.rayon === 'string') {
+                            s.rayon = s.rayon.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                        }
                         const hasRayon = s.rayon && String(s.rayon).trim() !== '' && String(s.rayon).trim() !== '0';
                         if (!hasRayon) return; // skip empty/0 — they'll be shown in special section
                         if (!rayonMap[s.rayon]) rayonMap[s.rayon] = new Set();
