@@ -4,6 +4,9 @@
 <head>
     <meta charset="utf-8">
     <title>Laporan & Pemantauan Perizinan Muwajah</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1896,7 +1899,7 @@
         // ============================================================
         // GANTI URL INI DENGAN DEPLOYMENT URL GOOGLE APPS SCRIPT ANDA
         // ============================================================
-        const scriptURL = "https://script.google.com/macros/s/AKfycbzl5MBZ7tEu8mpXrS9UanBM9UadhgB_eGvycyXXM_fFn7vqJii4v8ZLASASSx51dM9C/exec";
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwIF-YtaUCE73fLwwf-EmKynclH8aHyvkr2nwWQIlHldteEMfp0Jd390TNdiAO_xHv6/exec";
         const PIN_USTADZ = "1234";
 
         // ─── Chart.js dark theme defaults ───
@@ -1980,9 +1983,34 @@
             });
         });
 
+        function getSafeYYYYMMDD(dateString) {
+            if (!dateString) return "";
+            let d = new Date(dateString);
+            if (!isNaN(d.getTime())) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            }
+            let dPart = dateString.split(" ")[0];
+            if (dPart.includes("/")) {
+                let p = dPart.split("/");
+                if (p.length === 3 && p[2].length === 4) {
+                    return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+                }
+            }
+            if (dPart.includes("-")) {
+                let p = dPart.split("-");
+                if (p.length === 3 && p[0].length === 4) {
+                    return dPart;
+                }
+            }
+            return dPart;
+        }
+
         function initializeDashboard() {
-            const allBtn = document.querySelector('.date-shortcut[onclick*="all"]');
-            setDateShortcut('all', allBtn);
+            const todayBtn = document.querySelector('.date-shortcut[onclick*="today"]');
+            setDateShortcut('today', todayBtn);
 
             fetchRayonData();
             fetchListRayon();
@@ -2038,8 +2066,26 @@
                 contentType: 'text/plain',
                 success: function (response) {
                     hideLoader();
+                    console.log("PIKET HISTORY RAW RESPONSE:", response);
                     if (response.error) { showToast("Gagal memuat laporan: " + response.error, "danger", 6000); return; }
-                    piketHistory = response;
+                    
+                    // Robust mapping in case API sends Title Case keys
+                    if (Array.isArray(response)) {
+                        piketHistory = response.map(item => ({
+                            tanggal: item.tanggal || item.Tanggal || "",
+                            stambuk: item.stambuk || item.Stambuk || "",
+                            nama: item.nama || item.Nama || "",
+                            kelas: item.kelas || item.Kelas || "",
+                            rayon: item.rayon || item.Rayon || "",
+                            status: item.status || item.Status || "Hadir",
+                            alasan: item.alasan || item.Alasan || "Piket Malam",
+                            detail: item.detail || item.Detail || ""
+                        }));
+                        console.log("PIKET HISTORY MAPPED:", piketHistory);
+                    } else {
+                        piketHistory = [];
+                    }
+                    
                     applyGlobalFilters();
                 },
                 error: function () {
@@ -2054,8 +2100,13 @@
             document.querySelectorAll('.date-shortcut').forEach(b => b.classList.remove('active'));
             if (btn) btn.classList.add('active');
 
+            const fmt = d => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
             const today = new Date();
-            const fmt = d => d.toISOString().split('T')[0];
             let start = "", end = fmt(today);
 
             if (type === 'today') { start = end; }
@@ -2075,7 +2126,7 @@
             const endVal = $('#endDateFilter').val();
 
             filteredPiketHistory = piketHistory.filter(item => {
-                const itemDate = item.tanggal ? item.tanggal.split(" ")[0] : "";
+                const itemDate = getSafeYYYYMMDD(item.tanggal);
                 const searchText = `${item.nama} ${item.stambuk} ${item.kelas} ${item.alasan}`.toLowerCase();
                 const matchSearch = !searchVal || searchText.includes(searchVal);
                 const matchRayon = !rayonVal || String(item.rayon) === String(rayonVal);
