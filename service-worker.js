@@ -1,4 +1,4 @@
-const CACHE_NAME = "muwajjah-tracker-v3";
+const CACHE_NAME = "muwajjah-tracker-v4";
 const urlsToCache = [
   "./",
   "./index.html",
@@ -15,8 +15,9 @@ const urlsToCache = [
   "https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
 ];
 
-// Instalasi service worker dan cache aset
+// Instalasi service worker: segera aktifkan tanpa menunggu tab ditutup
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
@@ -24,26 +25,53 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Ambil file dari cache jika offline
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+// Aktivasi service worker: hapus cache versi lama & ambil alih kontrol halaman langsung
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cache) => {
+            if (cache !== CACHE_NAME) {
+              console.log("🧹 Menghapus cache PWA lama:", cache);
+              return caches.delete(cache);
+            }
+          })
+        );
+      })
+    ])
   );
 });
 
-// Hapus cache lama saat update
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
+// Strategi Pengambilan (Fetch):
+// - Halaman HTML (Dokumen): Network-First (Cari ke server dulu agar selalu dapat versi terbaru, jika offline baru ambil cache)
+// - Aset Statis (CSS/JS/Gambar): Cache-First
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate" || event.request.destination === "document") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
           }
+          return response;
         })
-      );
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Aset statis lainnya
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request);
     })
   );
 });
