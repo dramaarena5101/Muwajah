@@ -645,6 +645,9 @@
         <button id="btnToggleRealtime" class="btn-action btn-secondary-action" title="Nyalakan pemantauan setoran real-time otomatis detik ini">
           <i class="ph ph-broadcast" id="iconBroadcast"></i> <span id="textRealtime">Live: OFF</span>
         </button>
+        <a href="kelola_santri.html" class="btn-action btn-secondary-action" title="Kelola Master Data Santri (5B–5S)">
+          <i class="ph ph-student"></i> Kelola Santri
+        </a>
         <a href="kelola_pembimbing.html" class="btn-action btn-secondary-action" title="Kelola Master Data Pembimbing">
           <i class="ph ph-chalkboard-teacher"></i> Kelola Pembimbing
         </a>
@@ -848,23 +851,24 @@
             </div>
           </div>
 
-          <!-- Pelajaran Favorit Insights: Overall & Per Kelas -->
+          <!-- Pelajaran & Kegiatan Favorit Insights: Overall & Per Kelas -->
           <div class="mt-4 pt-3 border-top">
-            <div class="row g-3 align-items-center">
+            <div class="row g-3">
+              <!-- Baris 1: Pelajaran Favorit (Overall + Per Kelas) -->
               <div class="col-lg-4 col-12">
                 <div class="fav-card" style="border-left: 3px solid #2563eb;">
                   <div class="d-flex align-items-center gap-2 mb-1">
                     <i class="ph ph-medal" style="color: #2563eb;"></i>
-                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Mapel Favorit No. 1 Keseluruhan</span>
+                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Mapel Favorit No. 1 (Keseluruhan)</span>
                   </div>
-                  <h4 class="fw-bold mb-1" id="favOverallTitle" style="font-size: 16px;">—</h4>
+                  <h4 class="fw-bold mb-1 text-dark" id="favOverallTitle" style="font-size: 16px;">—</h4>
                   <div class="text-muted" style="font-size: 12px;" id="favOverallSub">— materi disetor</div>
                 </div>
               </div>
               <div class="col-lg-8 col-12">
                 <div class="fav-card">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Pelajaran Favorit di Masing-masing Kelas</span>
+                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Pelajaran Favorit di Setiap Kelas (5B – 5S)</span>
                     <small class="text-muted" style="font-size: 11px;">Mapel terbanyak per kelas</small>
                   </div>
                   <div class="table-container" style="max-height: 140px; overflow-y: auto;">
@@ -878,6 +882,41 @@
                         </tr>
                       </thead>
                       <tbody id="bodyFavPerKelas">
+                        <tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Baris 2: Kegiatan Favorit (Overall + Per Kelas) -->
+              <div class="col-lg-4 col-12 mt-3">
+                <div class="fav-card" style="border-left: 3px solid #0f766e;">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="ph ph-sparkle" style="color: #0f766e;"></i>
+                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Kegiatan Terfavorit (Keseluruhan)</span>
+                  </div>
+                  <h4 class="fw-bold mb-1 text-dark" id="favKegiatanOverallTitle" style="font-size: 16px;">—</h4>
+                  <div class="text-muted" style="font-size: 12px;" id="favKegiatanOverallSub">— materi disetor</div>
+                </div>
+              </div>
+              <div class="col-lg-8 col-12 mt-3">
+                <div class="fav-card">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted text-uppercase" style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;">Kegiatan Favorit di Setiap Kelas (5B – 5S)</span>
+                    <small class="text-muted" style="font-size: 11px;">Aktivitas dominan per kelas</small>
+                  </div>
+                  <div class="table-container" style="max-height: 140px; overflow-y: auto;">
+                    <table class="data-table" style="font-size: 12px;">
+                      <thead>
+                        <tr>
+                          <th>Kelas</th>
+                          <th>Kegiatan Terfavorit</th>
+                          <th class="text-center">Jumlah Disetor</th>
+                          <th class="text-end">Porsi Kelas</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bodyFavKegiatanPerKelas">
                         <tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>
                       </tbody>
                     </table>
@@ -1283,13 +1322,26 @@
       }
     }
 
+    // Daftar 18 Kelas B s/d S
+    const KELAS_5_LIST = ["5B", "5C", "5D", "5E", "5F", "5G", "5H", "5I", "5J", "5K", "5L", "5M", "5N", "5O", "5P", "5Q", "5R", "5S"];
+
+    function normalizeKelas(k) {
+      if (!k) return "";
+      const clean = k.toString().replace(/[-\s]/g, "").toUpperCase();
+      if (KELAS_5_LIST.includes(clean)) return clean;
+      if (clean.length === 1 && KELAS_5_LIST.includes("5" + clean)) return "5" + clean;
+      return clean;
+    }
+
     function populateKelasFilter() {
-      const kelasSet = new Set(flattenedRecords.map(r => r.kelas).filter(Boolean));
+      const detected = new Set(flattenedRecords.map(r => r.kelas).filter(Boolean));
+      const allKelas = Array.from(new Set([...KELAS_5_LIST, ...detected])).sort();
+
       const sel = document.getElementById("filterKelas");
       const current = sel.value;
-      sel.innerHTML = `<option value="all">Semua Kelas</option>`;
-      Array.from(kelasSet).sort().forEach(k => {
-        sel.innerHTML += `<option value="${k}">${k}</option>`;
+      sel.innerHTML = `<option value="all">Semua Kelas (5B – 5S)</option>`;
+      allKelas.forEach(k => {
+        sel.innerHTML += `<option value="${k}">Kelas ${k}</option>`;
       });
       if (current && [...sel.options].some(o => o.value === current)) {
         sel.value = current;
@@ -1531,10 +1583,11 @@
       });
     }
 
-    // Render POV Kelas & Pelajaran Favorit Per Kelas
+    // Render POV Kelas, Pelajaran Favorit, & Kegiatan Favorit Per Kelas
     function renderPOVKelasDanFavorit(filtered) {
       const kelasMap = {};
       const kelasMapelCount = {}; // { [kelas]: { [mapel]: count } }
+      const kelasKegiatanCount = {}; // { [kelas]: { [kegiatan]: count } }
 
       filtered.forEach(r => {
         const k = r.kelas || "Tanpa Kelas";
@@ -1546,6 +1599,7 @@
             items: []
           };
           kelasMapelCount[k] = {};
+          kelasKegiatanCount[k] = {};
         }
         kelasMap[k].count++;
         kelasMap[k].santriSet.add(r.stambuk || r.nama);
@@ -1553,19 +1607,25 @@
 
         const p = r.pelajaran || "Lainnya";
         kelasMapelCount[k][p] = (kelasMapelCount[k][p] || 0) + 1;
+
+        const j = r.jenis || "Lainnya";
+        kelasKegiatanCount[k][j] = (kelasKegiatanCount[k][j] || 0) + 1;
       });
 
       const sortedKelas = Object.values(kelasMap).sort((a, b) => b.count - a.count);
       const tbodyKelas = document.getElementById("bodyKelas");
       tbodyKelas.innerHTML = "";
 
-      // Rekap Favorit Per Kelas
       const tbodyFav = document.getElementById("bodyFavPerKelas");
       tbodyFav.innerHTML = "";
+
+      const tbodyFavKegiatan = document.getElementById("bodyFavKegiatanPerKelas");
+      tbodyFavKegiatan.innerHTML = "";
 
       if (sortedKelas.length === 0) {
         tbodyKelas.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data kelas</td></tr>`;
         tbodyFav.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>`;
+        tbodyFavKegiatan.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>`;
         return;
       }
 
@@ -1600,6 +1660,22 @@
               <td><span class="badge-subtle badge-accent">${topPName}</span></td>
               <td class="text-center fw-bold">${topPCount} materi</td>
               <td class="text-end text-muted">${pct}% setoran kelas</td>
+            </tr>
+          `;
+        }
+
+        // Baris untuk Kegiatan Favorit Per Kelas
+        const kegiatanEntries = Object.entries(kelasKegiatanCount[k.kelas] || {}).sort((a, b) => b[1] - a[1]);
+        if (kegiatanEntries.length > 0) {
+          const topKName = kegiatanEntries[0][0];
+          const topKCount = kegiatanEntries[0][1];
+          const pctK = Math.round((topKCount / k.count) * 100);
+          tbodyFavKegiatan.innerHTML += `
+            <tr>
+              <td class="fw-semibold">${k.kelas}</td>
+              <td><span class="badge-subtle badge-success">${topKName}</span></td>
+              <td class="text-center fw-bold">${topKCount} materi</td>
+              <td class="text-end text-muted">${pctK}% setoran kelas</td>
             </tr>
           `;
         }
@@ -1691,8 +1767,16 @@
 
       if (sortedKegiatan.length === 0) {
         tbodyKegiatan.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data jenis kegiatan</td></tr>`;
+        document.getElementById("favKegiatanOverallTitle").innerText = "—";
+        document.getElementById("favKegiatanOverallSub").innerText = "0 materi disetor";
         return;
       }
+
+      // Kegiatan Terfavorit No. 1 Keseluruhan
+      const topKegiatanOverall = sortedKegiatan[0];
+      document.getElementById("favKegiatanOverallTitle").innerText = topKegiatanOverall.jenis;
+      const pctKAll = totalCount > 0 ? Math.round((topKegiatanOverall.count / totalCount) * 100) : 0;
+      document.getElementById("favKegiatanOverallSub").innerText = `${topKegiatanOverall.count} materi disetor (${pctKAll}% dari total kegiatan)`;
 
       sortedKegiatan.forEach(k => {
         const pct = totalCount > 0 ? ((k.count / totalCount) * 100).toFixed(1) : 0;

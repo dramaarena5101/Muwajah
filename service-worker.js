@@ -1,9 +1,10 @@
-const CACHE_NAME = "muwajjah-tracker-v7";
+const CACHE_NAME = "muwajjah-tracker-v8";
 const urlsToCache = [
   "./",
   "./index.html",
   "./analisis.html",
   "./kelola_pembimbing.html",
+  "./kelola_santri.html",
   "./manifest.json",
   "./piket.html",
   "./manifest-piket.json",

@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Santri Kelas 5 — Muwajjah System</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+
+  <style>
+    /* Design Tokens sesuai desain.md */
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #1e293b;
+      --primary-hover: #0f172a;
+      --accent: #2563eb;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      font-size: 13.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .main-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .form-control, .form-select {
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 12px;
+      color: var(--text-main);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      outline: none;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color .15s, border-color .15s;
+    }
+
+    .btn-primary-action {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary-action:hover {
+      background: var(--primary-hover);
+      color: #ffffff;
+    }
+
+    .btn-secondary-action {
+      background: var(--surface);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+    .btn-secondary-action:hover {
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-danger-action {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .btn-danger-action:hover {
+      background: #fee2e2;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover td {
+      background-color: var(--surface-subtle);
+    }
+
+    .badge-subtle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .badge-accent {
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #bfdbfe;
+    }
+
+    .metric-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      height: 100%;
+    }
+
+    .spinner-quiet {
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Class Chips Selector */
+    .class-chip-group {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .class-chip {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+    }
+
+    .class-chip:hover {
+      border-color: var(--primary);
+      color: var(--text-main);
+    }
+
+    .class-chip.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-container">
+      <div class="d-flex align-items-center gap-3">
+        <a href="index.html" class="btn-action btn-secondary-action" title="Kembali ke Form Setoran">
+          <i class="ph ph-arrow-left"></i> Form Setoran
+        </a>
+        <div>
+          <h1 class="page-title">Kelola Santri Kelas 5 (B – S)</h1>
+          <p class="page-subtitle">Master Data Anggota Kelas 5 Terpadu — Cloud Sync Firebase</p>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="analisis.html" class="btn-action btn-secondary-action">
+          <i class="ph ph-chart-line-up"></i> Dashboard Analisis
+        </a>
+        <a href="kelola_pembimbing.html" class="btn-action btn-secondary-action">
+          <i class="ph ph-chalkboard-teacher"></i> Kelola Pembimbing
+        </a>
+        <button id="btnRefresh" class="btn-action btn-secondary-action" title="Segarkan Data">
+          <i class="ph ph-arrow-clockwise" id="iconRefresh"></i> Segarkan
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-container">
+
+    <!-- METRICS & STATUS -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4 col-12">
+        <div class="metric-box d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Total Santri Terdaftar</div>
+            <div class="fw-bold text-dark mt-1" style="font-size:26px;" id="statTotalSantri">0</div>
+            <div class="text-muted small">Kelas 5 (B s/d S)</div>
+          </div>
+          <div class="p-3 bg-light rounded-circle text-primary">
+            <i class="ph ph-student fs-3"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 col-12">
+        <div class="metric-box d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Cakupan Kelas Terisi</div>
+            <div class="fw-bold mt-1 text-primary" style="font-size:26px;" id="statTotalKelasTerisi">0 / 18</div>
+            <div class="text-muted small">Kelas 5B hingga 5S</div>
+          </div>
+          <div class="p-3 bg-light rounded-circle text-accent">
+            <i class="ph ph-buildings fs-3"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 col-12">
+        <div class="metric-box d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Import Massal Excel</div>
+              <div class="text-muted small mt-1">Copy-paste dari Excel/Sheets</div>
+            </div>
+            <button class="btn-action btn-primary-action" onclick="showImportModal()">
+              <i class="ph ph-file-arrow-up"></i> Import Excel / Teks
+            </button>
+          </div>
+          <div class="text-muted" style="font-size:11px; margin-top:8px;">
+            Format: <code>Abs · Stambuk · Nama · Kelas · Daerah</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER KELAS CHIPS -->
+    <div class="panel p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Pilih Filter Kelas 5 (B – S):</span>
+        <small class="text-muted" id="filterStatusLabel">Menampilkan Semua Kelas</small>
+      </div>
+      <div class="class-chip-group" id="classChipsContainer">
+        <!-- Rendered dynamically B to S -->
+      </div>
+    </div>
+
+    <!-- FORM TAMBAH SANTRI TUNGGAL -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><i class="ph ph-user-plus"></i> Tambah Santri Baru</h2>
+      </div>
+      <div class="panel-body">
+        <form id="formTambahSantri" class="row g-2 align-items-end">
+          <div class="col-md-2 col-4">
+            <label class="form-label small text-muted mb-1">No. Absen</label>
+            <input type="number" id="inputAbs" class="form-control" placeholder="1" min="1">
+          </div>
+          <div class="col-md-2 col-8">
+            <label class="form-label small text-muted mb-1">No. Stambuk</label>
+            <input type="text" id="inputStambuk" class="form-control" placeholder="Contoh: 82315" required>
+          </div>
+          <div class="col-md-3 col-12">
+            <label class="form-label small text-muted mb-1">Nama Lengkap Santri</label>
+            <input type="text" id="inputNama" class="form-control" placeholder="Nama lengkap..." required>
+          </div>
+          <div class="col-md-2 col-6">
+            <label class="form-label small text-muted mb-1">Kelas (5B–5S)</label>
+            <select id="inputKelas" class="form-select" required>
+              <!-- Options 5B to 5S -->
+            </select>
+          </div>
+          <div class="col-md-2 col-6">
+            <label class="form-label small text-muted mb-1">Daerah / Asrama</label>
+            <input type="text" id="inputDaerah" class="form-control" placeholder="Asal daerah...">
+          </div>
+          <div class="col-md-1 col-12">
+            <button type="submit" class="btn-action btn-primary-action w-100" id="btnSimpanSantri">
+              <i class="ph ph-plus"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- PANEL DAFTAR SANTRI -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="d-flex align-items-center gap-2">
+          <h2 class="panel-title"><i class="ph ph-users"></i> Daftar Santri</h2>
+          <span class="badge-subtle badge-accent" id="badgeJumlahSantri">0 Santri</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input type="text" id="searchSantri" class="form-control py-1 px-2" style="width:260px; font-size:12px;" placeholder="Cari nama, stambuk, atau daerah...">
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="p-5 text-center">
+        <div class="spinner-quiet"></div>
+        <div class="text-muted small">Memuat master data santri dari Firebase...</div>
+      </div>
+
+      <!-- Table Body -->
+      <div class="panel-body p-0" id="tableWrapper" style="display:none;">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Abs</th>
+                <th style="width: 110px;">Stambuk</th>
+                <th>Nama Santri</th>
+                <th style="width: 90px;">Kelas</th>
+                <th>Daerah / Asrama</th>
+                <th style="width: 120px;" class="text-end">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="bodySantri"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL EDIT SANTRI -->
+  <div class="modal fade" id="modalEditSantri" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: var(--radius-md);">
+        <div class="modal-header border-bottom py-3">
+          <h5 class="modal-title fw-bold" style="font-size:15px;">Edit Data Santri</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editSantriId">
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label small text-muted">No. Absen</label>
+              <input type="number" id="editAbs" class="form-control">
+            </div>
+            <div class="col-8">
+              <label class="form-label small text-muted">No. Stambuk</label>
+              <input type="text" id="editStambuk" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted">Nama Lengkap</label>
+              <input type="text" id="editNama" class="form-control" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small text-muted">Kelas</label>
+              <select id="editKelas" class="form-select" required></select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small text-muted">Daerah</label>
+              <input type="text" id="editDaerah" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-2">
+          <button type="button" class="btn-action btn-secondary-action" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn-action btn-primary-action" id="btnSimpanEditSantri">Simpan Perubahan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPORT EXCEL / PASTE MASSAL -->
+  <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="border-radius: var(--radius-md);">
+        <div class="modal-header border-bottom py-3">
+          <div>
+            <h5 class="modal-title fw-bold" style="font-size:15px;">Import Massal Santri (Copy-Paste Excel)</h5>
+            <small class="text-muted">Cukup blok tabel di Excel, lalu copy dan paste langsung di bawah</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-light border py-2 px-3 small text-muted mb-2">
+            <strong>Urutan Kolom yang Didukung:</strong><br>
+            <code>Abs [TAB] Stambuk [TAB] Nama [TAB] Kelas [TAB] Daerah</code><br>
+            <em>*Jika tidak ada Absen, format <code>Stambuk [TAB] Nama [TAB] Kelas [TAB] Daerah</code> juga otomatis dikenali.</em>
+          </div>
+          <textarea id="textareaImport" class="form-control" rows="9" placeholder="1	82315	Fakhri Antarun Nawwaruddin	5B	Bantul&#10;2	82316	Ahmad Zaki	5B	Surabaya&#10;1	86553	Rafa Raihan Sutisna	5K	Jakarta Timur"></textarea>
+          
+          <!-- Preview Box -->
+          <div id="importPreviewArea" class="mt-3" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="small fw-semibold text-dark" id="importPreviewCount">0 baris terdeteksi</span>
+            </div>
+            <div class="table-responsive border rounded" style="max-height: 160px; overflow-y:auto;">
+              <table class="data-table" style="font-size:11.5px;">
+                <thead>
+                  <tr>
+                    <th>Abs</th>
+                    <th>Stambuk</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>Daerah</th>
+                  </tr>
+                </thead>
+                <tbody id="importPreviewBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top py-2">
+          <button type="button" class="btn-action btn-secondary-action" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn-action btn-secondary-action" id="btnCekPreview">Cek Preview</button>
+          <button type="button" class="btn-action btn-primary-action" id="btnProsesImport">
+            <i class="ph ph-check"></i> Simpan ke Firebase
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT FIREBASE LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      deleteDoc,
+      collection,
+      getDocs,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZFTSN6XQsw9SLOkv6KwiIiOXLWRSAKRA",
+      authDomain: "muwajah-5101.firebaseapp.com",
+      projectId: "muwajah-5101",
+      storageBucket: "muwajah-5101.firebasestorage.app",
+      messagingSenderId: "896718761940",
+      appId: "1:896718761940:web:e8c9688433d37d4e907041"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Daftar Lengkap 18 Kelas B s/d S
+    const KELAS_LIST = ["5B", "5C", "5D", "5E", "5F", "5G", "5H", "5I", "5J", "5K", "5L", "5M", "5N", "5O", "5P", "5Q", "5R", "5S"];
+
+    // In-memory master list
+    let masterSantriList = [];
+    let activeKelasFilter = "all";
+
+    // Inisialisasi Options Kelas di Form
+    function initKelasDropdowns() {
+      const selTambah = document.getElementById("inputKelas");
+      const selEdit = document.getElementById("editKelas");
+      selTambah.innerHTML = "";
+      selEdit.innerHTML = "";
+
+      KELAS_LIST.forEach(k => {
+        selTambah.innerHTML += `<option value="${k}">${k}</option>`;
+        selEdit.innerHTML += `<option value="${k}">${k}</option>`;
+      });
+
+      // Render Chips
+      const chipsContainer = document.getElementById("classChipsContainer");
+      chipsContainer.innerHTML = `<button type="button" class="class-chip active" data-kelas="all">Semua Kelas</button>`;
+      KELAS_LIST.forEach(k => {
+        chipsContainer.innerHTML += `<button type="button" class="class-chip" data-kelas="${k}">${k}</button>`;
+      });
+
+      document.querySelectorAll(".class-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll(".class-chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          activeKelasFilter = chip.dataset.kelas;
+          document.getElementById("filterStatusLabel").innerText = activeKelasFilter === "all" ? "Menampilkan Semua Kelas" : `Filter Kelas: ${activeKelasFilter}`;
+          renderTabel();
+        });
+      });
+    }
+
+    // Normalisasi Nama Kelas (misal 5-B / 5 b / 5B -> 5B)
+    function normalizeKelas(k) {
+      if (!k) return "5B";
+      const clean = k.toString().replace(/[-\s]/g, "").toUpperCase();
+      if (KELAS_LIST.includes(clean)) return clean;
+      if (clean.length === 1 && KELAS_LIST.includes("5" + clean)) return "5" + clean;
+      return clean;
+    }
+
+    // Muat Seluruh Master Santri dari Firebase
+    async function muatData(force = false) {
+      document.getElementById("loadingState").style.display = "block";
+      document.getElementById("tableWrapper").style.display = "none";
+
+      const iconRef = document.getElementById("iconRefresh");
+      if (iconRef) iconRef.classList.add("ph-spin");
+
+      // Cek cache lokal jika tidak force
+      const cached = localStorage.getItem("muwajah_santri_master_cache");
+      if (!force && cached) {
+        try {
+          masterSantriList = JSON.parse(cached);
+          renderTabel();
+          updateMetrics();
+          document.getElementById("loadingState").style.display = "none";
+          document.getElementById("tableWrapper").style.display = "block";
+          if (iconRef) iconRef.classList.remove("ph-spin");
+          return;
+        } catch(e) {}
+      }
+
+      try {
+        // Baca koleksi santri_master
+        const querySnap = await getDocs(collection(db, "santri_master"));
+        masterSantriList = [];
+
+        querySnap.forEach(docSnap => {
+          const d = docSnap.data();
+          if (Array.isArray(d.santri)) {
+            // Jika disimpan per dokumen kelas
+            d.santri.forEach(s => {
+              masterSantriList.push({
+                id: s.stambuk || `${d.kelas}_${s.nama}`,
+                abs: s.abs || "",
+                stambuk: s.stambuk || "",
+                nama: s.nama || "",
+                kelas: normalizeKelas(s.kelas || d.kelas),
+                daerah: s.daerah || ""
+              });
+            });
+          } else {
+            // Dokumen individual
+            masterSantriList.push({
+              id: docSnap.id,
+              abs: d.abs || "",
+              stambuk: d.stambuk || "",
+              nama: d.nama || "",
+              kelas: normalizeKelas(d.kelas),
+              daerah: d.daerah || ""
+            });
+          }
+        });
+
+        // Urutkan default: Kelas lalu Absen / Nama
+        sortMasterList();
+
+        // Simpan ke cache lokal
+        localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+
+        renderTabel();
+        updateMetrics();
+      } catch (err) {
+        console.error("Gagal muat master santri:", err);
+        alert("Gagal memuat data santri dari Firebase: " + err.message);
+      } finally {
+        if (iconRef) iconRef.classList.remove("ph-spin");
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("tableWrapper").style.display = "block";
+      }
+    }
+
+    function sortMasterList() {
+      masterSantriList.sort((a, b) => {
+        if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+        const absA = parseInt(a.abs) || 999;
+        const absB = parseInt(b.abs) || 999;
+        if (absA !== absB) return absA - absB;
+        return a.nama.localeCompare(b.nama);
+      });
+    }
+
+    // Update Metrik Ringkasan
+    function updateMetrics() {
+      document.getElementById("statTotalSantri").innerText = masterSantriList.length.toLocaleString("id-ID");
+      const distinctKelas = new Set(masterSantriList.map(s => s.kelas).filter(k => KELAS_LIST.includes(k)));
+      document.getElementById("statTotalKelasTerisi").innerText = `${distinctKelas.size} / 18`;
+    }
+
+    // Render Tabel
+    function renderTabel() {
+      const q = document.getElementById("searchSantri").value.toLowerCase().trim();
+      const tbody = document.getElementById("bodySantri");
+      tbody.innerHTML = "";
+
+      let filtered = masterSantriList.filter(s => {
+        if (activeKelasFilter !== "all" && s.kelas !== activeKelasFilter) return false;
+        if (q) {
+          const matchNama = (s.nama || "").toLowerCase().includes(q);
+          const matchStambuk = (s.stambuk || "").toLowerCase().includes(q);
+          const matchDaerah = (s.daerah || "").toLowerCase().includes(q);
+          if (!matchNama && !matchStambuk && !matchDaerah) return false;
+        }
+        return true;
+      });
+
+      document.getElementById("badgeJumlahSantri").innerText = `${filtered.length} Santri`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data santri pada filter ini</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(s => {
+        tbody.innerHTML += `
+          <tr>
+            <td class="text-muted fw-semibold">${s.abs || "—"}</td>
+            <td><code class="text-dark fw-bold">${s.stambuk || "—"}</code></td>
+            <td class="fw-semibold text-dark">${s.nama}</td>
+            <td><span class="badge-subtle badge-accent fw-bold">${s.kelas}</span></td>
+            <td>${s.daerah || "—"}</td>
+            <td class="text-end">
+              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:12px;" onclick="bukaModalEdit('${encodeURIComponent(s.stambuk || s.id)}')">
+                <i class="ph ph-pencil-simple"></i> Edit
+              </button>
+              <button class="btn-action btn-danger-action py-1 px-2" style="font-size:12px;" onclick="hapusSantri('${encodeURIComponent(s.stambuk || s.id)}')">
+                <i class="ph ph-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Tambah Santri Tunggal
+    document.getElementById("formTambahSantri").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const abs = document.getElementById("inputAbs").value.trim();
+      const stambuk = document.getElementById("inputStambuk").value.trim();
+      const nama = document.getElementById("inputNama").value.trim();
+      const kelas = normalizeKelas(document.getElementById("inputKelas").value);
+      const daerah = document.getElementById("inputDaerah").value.trim();
+
+      if (!stambuk || !nama) return;
+
+      const newSantri = {
+        id: stambuk,
+        abs: abs ? parseInt(abs) : "",
+        stambuk,
+        nama,
+        kelas,
+        daerah
+      };
+
+      // Simpan ke Firestore
+      try {
+        const docRef = doc(db, "santri_master", stambuk);
+        await setDoc(docRef, newSantri);
+
+        masterSantriList = masterSantriList.filter(x => x.stambuk !== stambuk);
+        masterSantriList.push(newSantri);
+        sortMasterList();
+        localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+
+        document.getElementById("formTambahSantri").reset();
+        renderTabel();
+        updateMetrics();
+        alert(`Santri ${nama} (${kelas}) berhasil ditambahkan ke Firebase!`);
+      } catch (err) {
+        alert("Gagal menambahkan santri: " + err.message);
+      }
+    });
+
+    // Buka Modal Edit
+    window.bukaModalEdit = function(encodedId) {
+      const id = decodeURIComponent(encodedId);
+      const found = masterSantriList.find(s => s.stambuk === id || s.id === id);
+      if (!found) return;
+
+      document.getElementById("editSantriId").value = found.id;
+      document.getElementById("editAbs").value = found.abs || "";
+      document.getElementById("editStambuk").value = found.stambuk || "";
+      document.getElementById("editNama").value = found.nama || "";
+      document.getElementById("editKelas").value = found.kelas || "5B";
+      document.getElementById("editDaerah").value = found.daerah || "";
+
+      new bootstrap.Modal(document.getElementById("modalEditSantri")).show();
+    };
+
+    // Simpan Hasil Edit
+    document.getElementById("btnSimpanEditSantri").addEventListener("click", async () => {
+      const id = document.getElementById("editSantriId").value;
+      const abs = document.getElementById("editAbs").value.trim();
+      const stambuk = document.getElementById("editStambuk").value.trim();
+      const nama = document.getElementById("editNama").value.trim();
+      const kelas = normalizeKelas(document.getElementById("editKelas").value);
+      const daerah = document.getElementById("editDaerah").value.trim();
+
+      if (!stambuk || !nama) return;
+
+      const updated = {
+        id: stambuk,
+        abs: abs ? parseInt(abs) : "",
+        stambuk,
+        nama,
+        kelas,
+        daerah
+      };
+
+      try {
+        const docRef = doc(db, "santri_master", stambuk);
+        await setDoc(docRef, updated);
+
+        // Jika stambuk berubah, hapus dokumen lama
+        if (id && id !== stambuk) {
+          await deleteDoc(doc(db, "santri_master", id));
+        }
+
+        const idx = masterSantriList.findIndex(s => s.id === id || s.stambuk === id);
+        if (idx !== -1) masterSantriList[idx] = updated;
+        else masterSantriList.push(updated);
+
+        sortMasterList();
+        localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+
+        bootstrap.Modal.getInstance(document.getElementById("modalEditSantri")).hide();
+        renderTabel();
+        updateMetrics();
+        alert("Data santri berhasil diperbarui!");
+      } catch (err) {
+        alert("Gagal menyimpan perubahan: " + err.message);
+      }
+    });
+
+    // Hapus Santri
+    window.hapusSantri = async function(encodedId) {
+      const id = decodeURIComponent(encodedId);
+      const found = masterSantriList.find(s => s.stambuk === id || s.id === id);
+      if (!found) return;
+
+      if (confirm(`Yakin ingin menghapus ${found.nama} (${found.kelas}) dari master santri?`)) {
+        try {
+          await deleteDoc(doc(db, "santri_master", found.stambuk || found.id));
+          masterSantriList = masterSantriList.filter(s => s.id !== id && s.stambuk !== id);
+          localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+          renderTabel();
+          updateMetrics();
+        } catch (err) {
+          alert("Gagal menghapus santri: " + err.message);
+        }
+      }
+    };
+
+    // Modal Import
+    window.showImportModal = function() {
+      new bootstrap.Modal(document.getElementById("modalImport")).show();
+    };
+
+    // Parser Teks Excel / TSV / CSV
+    function parseImportText(text) {
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      const parsed = [];
+
+      lines.forEach(line => {
+        // Abaikan header jika ada
+        if (line.toLowerCase().includes("stambuk") && line.toLowerCase().includes("nama")) return;
+
+        let parts = line.split("\t");
+        if (parts.length < 3) parts = line.split(",");
+        if (parts.length < 3) parts = line.split(";");
+        parts = parts.map(p => p.trim());
+
+        if (parts.length >= 4) {
+          // Format 5 kolom: Abs | Stambuk | Nama | Kelas | Daerah
+          if (parts.length >= 5) {
+            parsed.push({
+              abs: parseInt(parts[0]) || "",
+              stambuk: parts[1],
+              nama: parts[2],
+              kelas: normalizeKelas(parts[3]),
+              daerah: parts[4] || ""
+            });
+          } else {
+            // Format 4 kolom: Stambuk | Nama | Kelas | Daerah ATAU Abs | Stambuk | Nama | Kelas
+            if (parts[0].length > 3 && !isNaN(parts[0])) {
+              // parts[0] adalah stambuk
+              parsed.push({
+                abs: "",
+                stambuk: parts[0],
+                nama: parts[1],
+                kelas: normalizeKelas(parts[2]),
+                daerah: parts[3] || ""
+              });
+            } else {
+              // parts[0] adalah absen
+              parsed.push({
+                abs: parseInt(parts[0]) || "",
+                stambuk: parts[1],
+                nama: parts[2],
+                kelas: normalizeKelas(parts[3]),
+                daerah: ""
+              });
+            }
+          }
+        }
+      });
+
+      return parsed;
+    }
+
+    // Tombol Cek Preview
+    document.getElementById("btnCekPreview").addEventListener("click", () => {
+      const text = document.getElementById("textareaImport").value.trim();
+      const parsed = parseImportText(text);
+
+      const previewArea = document.getElementById("importPreviewArea");
+      const previewBody = document.getElementById("importPreviewBody");
+      const previewCount = document.getElementById("importPreviewCount");
+
+      if (parsed.length === 0) {
+        alert("Format teks tidak terbaca. Pastikan ada minimal kolom Stambuk, Nama, dan Kelas.");
+        return;
+      }
+
+      previewCount.innerText = `${parsed.length} baris santri siap di-import`;
+      previewBody.innerHTML = "";
+      parsed.slice(0, 10).forEach(p => {
+        previewBody.innerHTML += `
+          <tr>
+            <td>${p.abs || "—"}</td>
+            <td><code>${p.stambuk}</code></td>
+            <td>${p.nama}</td>
+            <td><span class="badge-subtle badge-accent">${p.kelas}</span></td>
+            <td>${p.daerah || "—"}</td>
+          </tr>
+        `;
+      });
+      if (parsed.length > 10) {
+        previewBody.innerHTML += `<tr><td colspan="5" class="text-center text-muted">... dan ${parsed.length - 10} baris lainnya</td></tr>`;
+      }
+      previewArea.style.display = "block";
+    });
+
+    // Proses Import Massal ke Firebase dengan Batch
+    document.getElementById("btnProsesImport").addEventListener("click", async () => {
+      const text = document.getElementById("textareaImport").value.trim();
+      const parsed = parseImportText(text);
+
+      if (parsed.length === 0) {
+        alert("Belum ada data untuk di-import!");
+        return;
+      }
+
+      const btn = document.getElementById("btnProsesImport");
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan ke Cloud...`;
+
+      try {
+        // Firestore batch max 500 writes, kita chunk per 400 dokumen
+        const CHUNK_SIZE = 400;
+        for (let i = 0; i < parsed.length; i += CHUNK_SIZE) {
+          const chunk = parsed.slice(i, i + CHUNK_SIZE);
+          const batch = writeBatch(db);
+          chunk.forEach(s => {
+            const docRef = doc(db, "santri_master", s.stambuk);
+            batch.set(docRef, { ...s, id: s.stambuk });
+
+            // Update local memory
+            const idx = masterSantriList.findIndex(x => x.stambuk === s.stambuk);
+            if (idx !== -1) masterSantriList[idx] = { ...s, id: s.stambuk };
+            else masterSantriList.push({ ...s, id: s.stambuk });
+          });
+          await batch.commit();
+        }
+
+        sortMasterList();
+        localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+
+        bootstrap.Modal.getInstance(document.getElementById("modalImport")).hide();
+        document.getElementById("textareaImport").value = "";
+        document.getElementById("importPreviewArea").style.display = "none";
+
+        renderTabel();
+        updateMetrics();
+        alert(`Berhasil menyimpan ${parsed.length} data santri ke Cloud Firebase!`);
+      } catch (err) {
+        console.error("Gagal import massal:", err);
+        alert("Gagal menyimpan ke Firebase: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="ph ph-check"></i> Simpan ke Firebase`;
+      }
+    });
+
+    // Event Listeners
+    document.getElementById("searchSantri").addEventListener("input", renderTabel);
+    document.getElementById("btnRefresh").addEventListener("click", () => muatData(true));
+
+    // Inisialisasi
+    initKelasDropdowns();
+    muatData();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
