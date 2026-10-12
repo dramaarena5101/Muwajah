@@ -1253,7 +1253,7 @@
               <option value="">— Pilih Jenis Kegiatan —</option>
               <option value="Menghafal">Menghafal (Tahfizh)</option>
               <option value="Merangkum">Merangkum (Takhlish)</option>
-              <option value="Menggaris">Menggaris Bawahi (Tasthir)</option>
+              <!-- <option value="Menggaris">Menggaris Bawahi (Tasthir)</option> -->
               <option value="Menanyakan">Meminta Penjelasan (Bayan)</option>
               <option value="Latihan">Latihan Soal (Tatbiq)</option>
               <option value="Mengajar">Mengajar Orang Lain (Ta'lim)</option>
@@ -1419,47 +1419,12 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <script type="module">
+  <script>
     // =============================================
-    // FIREBASE KONFIGURASI
+    // KONFIGURASI
     // =============================================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      getDocs,
-      getDoc,
-      query,
-      where,
-      writeBatch,
-      doc,
-      enableIndexedDbPersistence,
-      orderBy,
-      limit,
-      increment
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // TODO: Ganti dengan konfigurasi dari Firebase Console Anda
-    const firebaseConfig = {
-      apiKey: "AIzaSyAlS-quX7hdW4ZsOBCe7eJfcfT6liX4pEY",
-      authDomain: "muwajah-5ed1d.firebaseapp.com",
-      projectId: "muwajah-5ed1d",
-      storageBucket: "muwajah-5ed1d.firebasestorage.app",
-      messagingSenderId: "894973047701",
-      appId: "1:894973047701:web:65961fb3b26326b7733c9c"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Aktifkan Offline Persistence agar tetap jalan tanpa sinyal
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn('Tab jamak terbuka, persistence hanya aktif di satu tab');
-      } else if (err.code == 'unimplemented') {
-        console.warn('Browser tidak mendukung offline persistence');
-      }
-    });
+    // Script URL menggunakan endpoint baru
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyAxHDBYYJQoM8d8GznWQK-BnHKnTv93SnnwKvBlJZ39Xw1dMNyrvn0Z9q7QLZttixh/exec";
 
     // =============================================
     // STATE
@@ -1471,18 +1436,13 @@
 
     let progressSantri = [];
     let pelajaranData = {};
-    let activeFilter = "all";
+    let activeFilter = "all";   // for history filter
 
     // Dashboard State
     let globalDashboardData = [];
     let chartPelajaranInstance = null;
     let chartKelasInstance = null;
     const PIN_DASHBOARD = "1234";
-
-    // Ekspos ke global window agar onclick="..." di HTML tetap berfungsi
-    window.showDashboardPinModal = showDashboardPinModal;
-    window.verifyDashboardPin = verifyDashboardPin;
-    window.closeDashboard = closeDashboard;
 
     // =============================================
     // DASHBOARD WALI KELAS LOGIC
@@ -1503,6 +1463,7 @@
     }
 
     async function openDashboard() {
+      // Sembunyikan UI utama, tampilkan dashboard
       document.querySelectorAll(".container.py-3")[0].style.display = "none";
       document.getElementById("dashboardSection").style.display = "block";
 
@@ -1510,28 +1471,15 @@
       btnBtn.innerHTML = '<i class="ph-duotone ph-spinner ph-spin"></i>';
 
       try {
-        // HANYA BACA 1 DOKUMEN REKAP (SUPER HEMAT KUOTA)
-        const statRef = doc(db, "stats", "global");
-        const docSnap = await getDoc(statRef);
-        
-        let stats = { total_laporan: 0, kelas: {}, pelajaran: {} };
-        if (docSnap.exists()) {
-            const raw = docSnap.data();
-            stats.total_laporan = raw.total_laporan || 0;
-            
-            // Pisahkan data kelas dan pelajaran dari key
-            Object.keys(raw).forEach(k => {
-                if (k.startsWith("kelas_")) {
-                    stats.kelas[k.replace("kelas_", "")] = raw[k];
-                } else if (k.startsWith("pelajaran_")) {
-                    stats.pelajaran[k.replace("pelajaran_", "")] = raw[k];
-                }
-            });
-        }
-
-        renderDashboard(stats);
+        const res = await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getAllProgress" })
+        });
+        const data = await res.json();
+        globalDashboardData = data;
+        renderDashboard(data);
       } catch (err) {
-        alert("Gagal mengambil data dashboard: " + err.message);
+        alert("Gagal mengambil data dashboard.");
         closeDashboard();
       }
     }
@@ -1541,21 +1489,33 @@
       document.querySelectorAll(".container.py-3")[0].style.display = "block";
     }
 
-    function renderDashboard(stats) {
-      document.getElementById("dashTotalLaporan").innerText = stats.total_laporan.toLocaleString("id-ID");
+    function renderDashboard(data) {
+      document.getElementById("dashTotalLaporan").innerText = data.length;
 
-      document.getElementById("dashTotalSantri").innerText = "~"; // Unik santri susah direkap via increment, ditandai ~
-      document.getElementById("dashTotalKelas").innerText = Object.keys(stats.kelas).length;
-      document.getElementById("dashTotalPelajaran").innerText = Object.keys(stats.pelajaran).length;
+      // Grouping
+      const santriSet = new Set();
+      const kelasCount = {};
+      const pelajaranCount = {};
 
-      renderChartPelajaran(stats.pelajaran);
-      renderChartKelas(stats.kelas);
+      data.forEach(d => {
+        if (d.stambuk) santriSet.add(d.stambuk);
+        if (d.kelas) kelasCount[d.kelas] = (kelasCount[d.kelas] || 0) + 1;
+        if (d.pelajaran) pelajaranCount[d.pelajaran] = (pelajaranCount[d.pelajaran] || 0) + 1;
+      });
+
+      document.getElementById("dashTotalSantri").innerText = santriSet.size;
+      document.getElementById("dashTotalKelas").innerText = Object.keys(kelasCount).length;
+      document.getElementById("dashTotalPelajaran").innerText = Object.keys(pelajaranCount).length;
+
+      renderChartPelajaran(pelajaranCount);
+      renderChartKelas(kelasCount);
     }
 
     function renderChartPelajaran(dataObj) {
       const ctx = document.getElementById('chartPelajaran').getContext('2d');
       if (chartPelajaranInstance) chartPelajaranInstance.destroy();
 
+      // Sort data for better presentation
       const sortedKeys = Object.keys(dataObj).sort((a, b) => dataObj[b] - dataObj[a]);
       const sortedValues = sortedKeys.map(k => dataObj[k]);
 
@@ -1577,7 +1537,8 @@
           onClick: (e, elements) => {
             if (elements.length > 0) {
               const idx = elements[0].index;
-              drillDownDashboard('pelajaran', sortedKeys[idx]);
+              const label = sortedKeys[idx];
+              drillDownDashboard('pelajaran', label);
             }
           }
         }
@@ -1609,58 +1570,49 @@
           onClick: (e, elements) => {
             if (elements.length > 0) {
               const idx = elements[0].index;
-              drillDownDashboard('kelas', sortedKeys[idx]);
+              const label = sortedKeys[idx];
+              drillDownDashboard('kelas', label);
             }
           }
         }
       });
     }
 
-    async function drillDownDashboard(filterType, filterValue) {
-      document.getElementById("modalDetailTitle").innerText = `Detail: ${filterValue} (Memuat...)`;
+    function drillDownDashboard(filterType, filterValue) {
+      const filtered = globalDashboardData.filter(d => d[filterType] === filterValue);
+      document.getElementById("modalDetailTitle").innerText = `Detail: ${filterValue} (${filtered.length} Data)`;
+
       const tbody = document.getElementById("detailDashboardBody");
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><span class="spinner-border text-primary"></span></td></tr>`;
-      
+      tbody.innerHTML = "";
+
+      // Sort by tanggal descending
+      filtered.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+      filtered.forEach(d => {
+        let dateStr = "";
+        try {
+          const dt = new Date(d.tanggal);
+          if (isNaN(dt.getTime())) dateStr = d.tanggal;
+          else dateStr = `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
+        } catch (e) { dateStr = d.tanggal; }
+
+        tbody.innerHTML += `
+          <tr>
+            <td style="white-space:nowrap;">${dateStr}</td>
+            <td class="fw-bold">${d.nama}</td>
+            <td>${d.kelas}</td>
+            <td>${d.pelajaran}</td>
+            <td><span style="font-size:11px;" class="badge bg-light text-dark border mb-1">${d.jenis}</span><br/>${d.judul}</td>
+          </tr>
+        `;
+      });
+
       new bootstrap.Modal(document.getElementById("modalDetailDashboard")).show();
-
-      try {
-        // Query langsung ke database hanya jika diklik, limit 100 data terbaru
-        const q = query(collection(db, "setoran"), where(filterType, "==", filterValue), orderBy("tanggal", "desc"), limit(100));
-        const snapshot = await getDocs(q);
-        
-        let filtered = [];
-        snapshot.forEach((doc) => filtered.push(doc.data()));
-
-        document.getElementById("modalDetailTitle").innerText = `Detail: ${filterValue} (${filtered.length} Data Terbaru)`;
-        tbody.innerHTML = "";
-
-        if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>`;
-            return;
-        }
-
-        filtered.forEach(d => {
-          let dateStr = "";
-          try {
-            const dt = new Date(d.tanggal);
-            if (isNaN(dt.getTime())) dateStr = d.tanggal;
-            else dateStr = `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
-          } catch (e) { dateStr = d.tanggal; }
-
-          tbody.innerHTML += `
-            <tr>
-              <td style="white-space:nowrap;">${dateStr}</td>
-              <td class="fw-bold">${d.nama}</td>
-              <td>${d.kelas}</td>
-              <td>${d.pelajaran}</td>
-              <td><span style="font-size:11px;" class="badge bg-light text-dark border mb-1">${d.jenis}</span><br/>${d.judul}</td>
-            </tr>
-          `;
-        });
-      } catch (err) {
-         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Gagal memuat: ${err.message}</td></tr>`;
-      }
     }
+
+    // =============================================
+    // END DASHBOARD LOGIC
+    // =============================================
 
     // =============================================
     // DARK MODE
@@ -1682,15 +1634,60 @@
     });
 
     // =============================================
-    // OFFLINE DETECTION 
+    // OFFLINE DETECTION & QUEUE
     // =============================================
     const offBanner = document.getElementById("offlineBanner");
     window.addEventListener("online", () => {
       offBanner.style.display = "none";
       showToast("Koneksi internet pulih kembali.", "success");
-      if (stambukInput.value) muatProgress(stambukInput.value);
+      processOfflineQueue();
     });
     window.addEventListener("offline", () => { offBanner.style.display = "block"; });
+
+    const sendWithRetry = async (data, maxR = 3, cur = 0) => {
+      try {
+        const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify({ action: "simpanData", data }) });
+        const hasil = await res.json();
+        if (hasil.retry && cur < maxR) {
+          showToast(`Server sibuk, mengulang (${cur + 1}/${maxR})...`, "warning", 2000);
+          await new Promise(r => setTimeout(r, 2500));
+          return sendWithRetry(data, maxR, cur + 1);
+        }
+        if (hasil.error && !hasil.retry) throw new Error(hasil.error);
+        return hasil;
+      } catch (err) {
+        if (cur < maxR) {
+          showToast(`Koneksi terganggu, mencoba ulang (${cur + 1}/${maxR})...`, "warning", 2000);
+          await new Promise(r => setTimeout(r, 3000));
+          return sendWithRetry(data, maxR, cur + 1);
+        }
+        throw err;
+      }
+    };
+
+    async function processOfflineQueue() {
+      let queue = JSON.parse(localStorage.getItem("muwajah_queue") || "[]");
+      if (queue.length === 0) return;
+
+      showToast(`Mengirim ${queue.length} antrean offline...`, "primary", 3000);
+      let failedQueue = [];
+
+      for (const payload of queue) {
+        try {
+          await sendWithRetry(payload, 2);
+        } catch (err) {
+          failedQueue.push(payload);
+        }
+      }
+
+      localStorage.setItem("muwajah_queue", JSON.stringify(failedQueue));
+      if (failedQueue.length === 0) {
+        showToast("Semua antrean offline berhasil terkirim!", "success");
+        if (stambukInput.value) muatProgress(stambukInput.value);
+      } else {
+        showToast(`Ada ${failedQueue.length} data masih gagal. Akan dicoba otomatis nanti.`, "danger", 5000);
+      }
+    }
 
     // =============================================
     // INIT FROM URL
@@ -1703,8 +1700,14 @@
       if (p.has("daerah")) document.getElementById("daerah").value = p.get("daerah");
     })();
 
-    function isArabic(t) { return /[؀-ۿݐ-ݿ]/.test(t); }
+    // =============================================
+    // HELPER: Arabic detection
+    // =============================================
+    function isArabic(t) { return /[\u0600-\u06FF\u0750-\u077F]/.test(t); }
 
+    // =============================================
+    // TOAST
+    // =============================================
     function showToast(msg, type = "primary", delay = 4000) {
       const id = "t" + Date.now();
       const icons = {
@@ -1732,72 +1735,44 @@
     }
 
     // =============================================
-    // LOAD PELAJARAN (OPTIMAL DENGAN CACHE)
+    // LOAD PELAJARAN
     // =============================================
     async function loadPelajaran() {
       try {
-        // Cek cache lokal terlebih dahulu
-        const cache = localStorage.getItem("muwajah_pelajaran");
-        const cacheTime = localStorage.getItem("muwajah_pelajaran_time");
+        if (!navigator.onLine) throw new Error("Offline");
+        const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify({ action: "getPelajaran" }) });
+        const raw = await res.json();
 
-        // Cache valid untuk 24 jam (86400000 ms)
-        if (cache && cacheTime && (Date.now() - parseInt(cacheTime) < 86400000)) {
-          pelajaranData = JSON.parse(cache);
-          populatePelajaranSelect();
-          return;
-        }
-
-        if (!navigator.onLine) {
-          if (cache) {
-            pelajaranData = JSON.parse(cache);
-            populatePelajaranSelect();
-          } else {
-            throw new Error("Offline dan tidak ada cache data pelajaran");
-          }
-          return;
-        }
-
-        // Ambil dari Firebase
-        const q = query(collection(db, "pelajaran_master"));
-        const snapshot = await getDocs(q);
-
-        let newData = {};
-        snapshot.forEach((doc) => {
-          // Document ID = Nama pelajaran (e.g. "Muthala'ah")
-          // Data array di dalam field 'materi'
-          const docData = doc.data();
-          const items = Array.isArray(docData.materi) ? docData.materi : [];
-
-          newData[doc.id] = items.map(m => {
+        // ── NORMALISASI DATA PELAJARAN ──
+        // Google Apps Script bisa mengembalikan field dengan kapital berbeda (Type/type, Judul/judul, dll)
+        // Kita normalisasi semua key ke lowercase dan trim spasi
+        pelajaranData = {};
+        Object.entries(raw || {}).forEach(([namaPelajaran, items]) => {
+          pelajaranData[namaPelajaran] = (Array.isArray(items) ? items : []).map(m => {
             const norm = {};
             Object.entries(m).forEach(([k, v]) => {
-              norm[String(k).trim().toLowerCase()] = v;
+              const safeKey = String(k).trim().toLowerCase();
+              norm[safeKey] = v;
             });
+            // Simpan data aslinya untuk fallback
             norm._raw = m;
             return norm;
           });
         });
 
-        // Simpan ke Cache
-        if (Object.keys(newData).length > 0) {
-          pelajaranData = newData;
-          localStorage.setItem("muwajah_pelajaran", JSON.stringify(newData));
-          localStorage.setItem("muwajah_pelajaran_time", Date.now().toString());
+        // Debug: lihat struktur item pertama di console
+        const firstPel = Object.values(pelajaranData)[0];
+        if (firstPel && firstPel.length > 0) {
+          console.log('[Pelajaran Debug] Item pertama (setelah normalisasi):', JSON.stringify(firstPel[0]));
         }
 
-        populatePelajaranSelect();
-
+        pelajaranSel.innerHTML = `<option value="">— Pilih Mata Pelajaran —</option>`;
+        Object.keys(pelajaranData).forEach(p => {
+          pelajaranSel.innerHTML += `<option value="${p}">${p}</option>`;
+        });
       } catch (err) {
-        if (navigator.onLine) showToast("Gagal memuat pelajaran. " + err.message, "danger");
-        console.error(err);
+        if (navigator.onLine) showToast("Gagal memuat pelajaran. Coba refresh.", "danger");
       }
-    }
-
-    function populatePelajaranSelect() {
-      pelajaranSel.innerHTML = `<option value="">— Pilih Mata Pelajaran —</option>`;
-      Object.keys(pelajaranData).forEach(p => {
-        pelajaranSel.innerHTML += `<option value="${p}">${p}</option>`;
-      });
     }
 
     loadPelajaran();
@@ -1821,13 +1796,16 @@
       const items = pelajaranData[key];
       let no = 1, totalMateri = 0, doneMateri = 0;
 
+      // Deteksi Header: Cek key "type" atau cari value yang persis "judul" (case-insensitive)
       const isHeader = (m) => {
         if (m.type) return String(m.type).trim().toLowerCase() === "judul";
         if (m.tipe) return String(m.tipe).trim().toLowerCase() === "judul";
+        // Fallback robust: cek apakah ada property apa pun yang valuenya "judul" atau "Judul"
         return Object.values(m).some(v => String(v).trim().toLowerCase() === "judul");
       };
       const isIsi = (m) => !isHeader(m);
 
+      // Count totals — hanya item "Isi"
       items.forEach(m => {
         if (isIsi(m)) {
           totalMateri++;
@@ -1835,15 +1813,20 @@
         }
       });
 
+      // Render rows
       items.forEach(m => {
         const rtl = isArabic(m.judul) ? "rtl" : "ltr";
 
         if (isHeader(m)) {
+          // ── TYPE "Judul" → HEADER BAB: tanpa nomor, tanpa checkbox ──
           tbody.insertAdjacentHTML("beforeend", `
             <tr class="row-judul">
-              <td colspan="3" class="${rtl}">${m.judul}</td>
+              <td colspan="3" class="${rtl}">
+                ${m.judul}
+              </td>
             </tr>`);
         } else {
+          // ── TYPE "Isi" → tampil dengan nomor + checkbox / badge disetor ──
           const sudah = checkSudah(key, m, jenis);
           if (sudah) {
             const match = progressSantri.find(p =>
@@ -1851,14 +1834,16 @@
               (String(p.judul) === String(m.id) || String(p.judul) === String(m.judul)) &&
               String(p.jenis) === String(jenis)
             );
-            const tgl = match && match.tanggal
-              ? new Date(match.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
+            const tgl = match
+              ? new Date(match.tanggal || match.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
               : "";
             tbody.insertAdjacentHTML("beforeend", `
               <tr class="reported ${rtl}" title="Disetor: ${tgl}">
                 <td>${no++}</td>
                 <td>${m.judul}${m.isi ? `<div style="font-size:11px;color:var(--text-faint);margin-top:2px;">${m.isi}</div>` : ''}</td>
-                <td class="text-center"><span class="reported-badge">✓ ${tgl}</span></td>
+                <td class="text-center">
+                  <span class="reported-badge">✓ ${tgl}</span>
+                </td>
               </tr>`);
           } else {
             tbody.insertAdjacentHTML("beforeend", `
@@ -1870,7 +1855,7 @@
                 </td>
                 <td class="text-center">
                   <input type="checkbox" class="custom-check"
-                    value="${m.id || m.judul}"
+                    value="${m.id}"
                     data-judul="${encodeURIComponent(m.judul)}"
                     data-pelajaran="${encodeURIComponent(key)}">
                 </td>
@@ -1879,6 +1864,7 @@
         }
       });
 
+      // Update progress bar
       const pct = totalMateri > 0 ? Math.round((doneMateri / totalMateri) * 100) : 0;
       document.getElementById("materiProgressBar").style.width = pct + "%";
       document.getElementById("materiProgressText").textContent = `${doneMateri} / ${totalMateri}`;
@@ -1887,8 +1873,9 @@
     }
 
     function checkSudah(key, m, jenis) {
-      if (!jenis) return false;
+      if (!jenis) return false; // jika jenis belum dipilih, tidak ada yang "sudah"
       return !!progressSantri.find(p =>
+        // progressSantri sudah dinormalisasi lowercase saat muatProgress
         String(p.pelajaran).trim() === String(key).trim() &&
         (
           String(p.judul).trim() === String(m.id).trim() ||
@@ -1927,6 +1914,7 @@
       updateSaveBtn();
     });
 
+    // Bulk select / clear
     document.getElementById("btnSelectAll").addEventListener("click", () => {
       tbody.querySelectorAll(".custom-check:not(:disabled)").forEach(cb => cb.checked = true);
       updateSaveBtn();
@@ -1937,6 +1925,9 @@
       updateSaveBtn();
     });
 
+    // =============================================
+    // UPDATE SAVE BUTTON STATE
+    // =============================================
     function updateSaveBtn() {
       const checked = tbody.querySelectorAll(".custom-check:checked");
       const btn = document.getElementById("btnSimpan");
@@ -1951,6 +1942,9 @@
       }
     }
 
+    // =============================================
+    // SEARCH MATERI
+    // =============================================
     document.getElementById("searchJudul").addEventListener("input", function () {
       const q = this.value.toLowerCase().trim();
       document.querySelectorAll("#tabelBody tr").forEach(row => {
@@ -1960,7 +1954,7 @@
     });
 
     // =============================================
-    // LOAD PROGRESS (FROM FIREBASE)
+    // LOAD PROGRESS
     // =============================================
     async function muatProgress(stambukVal) {
       const wrap = document.getElementById("progressWrap");
@@ -1973,6 +1967,7 @@
         return;
       }
 
+      // Skeleton loader
       wrap.innerHTML = `
         <div class="card">
           <div class="card-body">
@@ -1992,29 +1987,37 @@
         </div>`;
 
       try {
-        const q = query(collection(db, "setoran"), where("stambuk", "==", stambukVal));
-        const snapshot = await getDocs(q);
-
-        let rawData = [];
-        snapshot.forEach((doc) => {
-          rawData.push(doc.data());
+        const res = await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify({ action: "getProgress", stambuk: stambukVal })
         });
+        const rows = await res.json();
+        const rawData = Array.isArray(rows) ? rows : [];
 
+        // ── NORMALISASI DATA PROGRESS ──
+        // Semua field key di-lowercase agar checkSudah bisa compare dengan pasti
         const data = rawData.map(r => {
           const norm = {};
           Object.entries(r).forEach(([k, v]) => { norm[k.toLowerCase()] = v; });
+          // Pastikan field-field kritis ada dengan nama yang benar
           return {
             pelajaran: norm.pelajaran || norm.mapel || "",
             judul: norm.judul || norm.materi || norm.id_materi || "",
             jenis: norm.jenis || norm.jenis_kegiatan || "",
             tanggal: norm.tanggal || norm.date || norm.timestamp || "",
             ustadz: norm.ustadz || norm.pembimbing || "",
+            // simpan juga raw untuk renderProgress
             _raw: norm
           };
         });
 
         data.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
         progressSantri = data;
+
+        // Debug: lihat item pertama
+        if (data.length > 0) {
+          console.log('[Progress Debug] Item pertama (setelah normalisasi):', JSON.stringify(data[0]));
+        }
 
         updateStats(data);
         renderProgress(data);
@@ -2028,6 +2031,9 @@
       }
     }
 
+    // =============================================
+    // RENDER PROGRESS (GROUPED BY DATE)
+    // =============================================
     function renderProgress(data) {
       const wrap = document.getElementById("progressWrap");
 
@@ -2043,8 +2049,10 @@
         return;
       }
 
+      // Get unique pelajaran for filter chips
       const uniquePelajaran = [...new Set(data.map(r => r.pelajaran || ""))].filter(Boolean);
 
+      // Group by date
       const grouped = {};
       data.forEach(r => {
         const d = new Date(r.tanggal);
@@ -2116,6 +2124,7 @@
           <div class="history-list" id="historyList">${listHTML}</div>
         </div>`;
 
+      // Filter chip logic
       document.querySelectorAll(".filter-chip").forEach(chip => {
         chip.addEventListener("click", function () {
           document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
@@ -2124,6 +2133,7 @@
           document.querySelectorAll(".history-item").forEach(item => {
             item.style.display = (f === "all" || item.dataset.pelajaran === f) ? "" : "none";
           });
+          // Also hide date groups if all items under them are hidden
           document.querySelectorAll(".history-date-group").forEach(dg => {
             let next = dg.nextElementSibling;
             let visible = false;
@@ -2137,8 +2147,13 @@
       });
     }
 
+    // =============================================
+    // STATS
+    // =============================================
     function updateStats(data) {
       if (data.length === 0) { hideStats(); return; }
+
+      // Count jenis frequency
       const freq = {};
       data.forEach(r => { const j = r.jenis || "—"; freq[j] = (freq[j] || 0) + 1; });
       const topJenis = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
@@ -2156,11 +2171,18 @@
       document.getElementById("statsGrid").style.display = "none";
     }
 
+    // =============================================
+    // STAMBUK INPUT LISTENER
+    // =============================================
     stambukInput.addEventListener("input", () => {
       muatProgress(stambukInput.value.trim());
     });
+
     if (stambukInput.value.trim()) muatProgress(stambukInput.value.trim());
 
+    // =============================================
+    // VALIDATE CHECKED AGAINST PROGRESS
+    // =============================================
     function validateCheckedAgainstProgress() {
       let any = false;
       tbody.querySelectorAll(".custom-check:checked").forEach(cb => {
@@ -2182,6 +2204,7 @@
     // SIMPAN — TAMPIL KONFIRMASI DULU
     // =============================================
     document.getElementById("btnSimpan").addEventListener("click", () => {
+
       const ustadz = document.getElementById("pembimbing").value.trim();
       const jenis = jenisSel.value.trim();
       const pelajaran = pelajaranSel.value;
@@ -2195,6 +2218,7 @@
       const checks = [...tbody.querySelectorAll(".custom-check:checked")];
       if (checks.length === 0) { showToast("Pilih minimal satu materi.", "warning"); return; }
 
+      // Fill confirmation modal
       document.getElementById("konfNama").textContent = nama || stambuk;
       document.getElementById("konfUstadz").textContent = ustadz;
       document.getElementById("konfPelajaran").textContent = `${pelajaran} — ${jenis}`;
@@ -2211,7 +2235,7 @@
     });
 
     // =============================================
-    // KONFIRMASI YA — KIRIM DATA KE FIREBASE
+    // KONFIRMASI YA — KIRIM DATA
     // =============================================
     document.getElementById("btnKonfirmYa").addEventListener("click", async () => {
       bootstrap.Modal.getInstance(document.getElementById("modalKonfirmasi")).hide();
@@ -2227,49 +2251,41 @@
       const checks = [...tbody.querySelectorAll(".custom-check:checked")];
       const judulArr = checks.map(cb => cb.value);
 
+      const payload = {
+        stambuk: stambuk.replace(/</g, "&lt;"),
+        nama: nama.replace(/</g, "&lt;"),
+        kelas: kelas.replace(/</g, "&lt;"),
+        daerah: daerah.replace(/</g, "&lt;"),
+        ustadz, jenis, pelajaran,
+        judul: judulArr
+      };
+
+      if (!navigator.onLine) {
+        let queue = JSON.parse(localStorage.getItem("muwajah_queue") || "[]");
+        queue.push(payload);
+        localStorage.setItem("muwajah_queue", JSON.stringify(queue));
+        showToast("Tersimpan di antrean offline. Akan terkirim otomatis saat sinyal kembali.", "info", 5000);
+
+        jenisSel.value = "";
+        document.getElementById("materiCard").style.display = "none";
+        tbody.querySelectorAll(".custom-check").forEach(cb => cb.checked = false);
+        updateSaveBtn();
+        return;
+      }
+
       const btn = document.getElementById("btnSimpan");
       const origHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...`;
 
       try {
-        const batch = writeBatch(db);
-        const timestamp = new Date().toISOString();
-
-        // Buat 1 dokumen setoran untuk setiap materi yang dicentang
-        judulArr.forEach((jdl) => {
-          const docRef = doc(collection(db, "setoran"));
-          batch.set(docRef, {
-            stambuk: stambuk,
-            nama: nama,
-            kelas: kelas,
-            daerah: daerah,
-            ustadz: ustadz,
-            jenis: jenis,
-            pelajaran: pelajaran,
-            judul: jdl,
-            tanggal: timestamp
-          });
-        });
-
-        // UPDATE REKAP GLOBAL DENGAN INCREMENT (Solusi 1)
-        const statRef = doc(db, "stats", "global");
-        batch.set(statRef, {
-            total_laporan: increment(judulArr.length),
-            [`kelas_${kelas}`]: increment(judulArr.length),
-            [`pelajaran_${pelajaran}`]: increment(judulArr.length)
-        }, { merge: true });
-
-        // Eksekusi Batch
-        await batch.commit();
-
-        showToast("Data berhasil disimpan!", "success");
+        const hasil = await sendWithRetry(payload);
+        showToast(hasil.message || "Data berhasil disimpan!", "success");
         await muatProgress(stambuk);
         renderMateri(pelajaran);
         jenisSel.value = "";
       } catch (err) {
-        showToast("Gagal menyimpan data: " + err.message, "danger", 6000);
-        console.error(err);
+        showToast("Gagal: " + err.message, "danger", 6000);
       } finally {
         btn.innerHTML = origHTML;
         updateSaveBtn();
@@ -2324,8 +2340,10 @@
               if (p.has("kelas")) document.getElementById("kelas").value = p.get("kelas").replace(/</g, "&lt;");
               if (p.has("daerah")) document.getElementById("daerah").value = p.get("daerah").replace(/</g, "&lt;");
 
+              // Remove pulse after scan
               document.getElementById("btnScanQR").classList.remove("pulse");
 
+              // Reset selections
               pelajaranSel.value = "";
               jenisSel.value = "";
               document.getElementById("materiCard").style.display = "none";
@@ -2365,6 +2383,7 @@
       });
     }
 
+    // PWA Install
     let deferredPrompt;
     window.addEventListener("beforeinstallprompt", e => {
       e.preventDefault();
