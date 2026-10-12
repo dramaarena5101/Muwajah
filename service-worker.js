@@ -2,6 +2,7 @@ const CACHE_NAME = "muwajjah-tracker-v4";
 const urlsToCache = [
   "./",
   "./index.html",
+  "./analisis.html",
   "./manifest.json",
   "./piket.html",
   "./manifest-piket.json",

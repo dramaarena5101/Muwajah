@@ -1151,7 +1151,10 @@
             Tracker</h1>
           <p class="app-subtitle">Sistem Pantauan Pembelajaran Santri Terpadu</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <a href="analisis.html" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size:12px;" title="Buka Halaman Analisis & Rekapitulasi">
+            <i class="ph-bold ph-chart-line-up fs-6"></i> Analisis & Rekap
+          </a>
           <button class="btn-theme" title="Dashboard Wali Kelas" onclick="showDashboardPinModal()"
             style="display:flex; align-items:center; justify-content:center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; width:36px; height:36px; color:var(--text); cursor:pointer;">
             <i class="ph-bold ph-chart-bar" style="font-size: 18px;"></i>
@@ -2092,7 +2095,20 @@
 
         let rawData = [];
         snapshot.forEach((doc) => {
-          rawData.push(doc.data());
+          const d = doc.data();
+          // Jika dokumen bertipe sesi (Mode Super Hemat: materi_list array)
+          if (Array.isArray(d.materi_list) && d.materi_list.length > 0) {
+            d.materi_list.forEach(m => {
+              rawData.push({
+                ...d,
+                judul: m.judul || m.id || "",
+                id_materi: m.id || m.judul || ""
+              });
+            });
+          } else {
+            // Dokumen bertipe single materi (format sebelumnya)
+            rawData.push(d);
+          }
         });
 
         const data = rawData.map(r => {
@@ -2102,6 +2118,7 @@
             pelajaran: norm.pelajaran || norm.mapel || "",
             judul: norm.judul || norm.materi || norm.id_materi || "",
             jenis: norm.jenis || norm.jenis_kegiatan || "",
+            semester: norm.semester || 2,
             tanggal: norm.tanggal || norm.date || norm.timestamp || "",
             ustadz: norm.ustadz || norm.pembimbing || "",
             _raw: norm
@@ -2336,32 +2353,42 @@
         const batch = writeBatch(db);
         const timestamp = new Date().toISOString();
 
-        // Buat 1 dokumen setoran untuk setiap materi yang dicentang
-        judulArr.forEach((jdl) => {
-          const docRef = doc(collection(db, "setoran"));
-          batch.set(docRef, {
-            stambuk: stambuk,
-            nama: nama,
-            kelas: kelas,
-            daerah: daerah,
-            ustadz: ustadz,
-            jenis: jenis,
-            pelajaran: pelajaran,
-            semester: activeSemVal,
-            judul: jdl,
-            tanggal: timestamp
-          });
+        const dateOnly = timestamp.split("T")[0]; // "YYYY-MM-DD"
+
+        // MODE SUPER HEMAT: 1 Sesi = 1 Dokumen Setoran di Firebase
+        const materiList = checks.map(cb => ({
+          id: cb.value,
+          judul: decodeURIComponent(cb.dataset.judul || cb.value)
+        }));
+
+        const docRef = doc(collection(db, "setoran"));
+        batch.set(docRef, {
+          stambuk: stambuk,
+          nama: nama,
+          kelas: kelas,
+          daerah: daerah,
+          ustadz: ustadz,
+          jenis: jenis,
+          pelajaran: pelajaran,
+          semester: activeSemVal,
+          materi_list: materiList,
+          materi_ids: checks.map(cb => cb.value),
+          jumlah_materi: materiList.length,
+          judul: materiList.map(m => m.judul).join(", "),
+          tanggal: timestamp,
+          tanggal_hari: dateOnly
         });
 
-        // UPDATE REKAP GLOBAL DENGAN INCREMENT (Solusi 1)
+        // UPDATE REKAP GLOBAL DENGAN INCREMENT (Hanya 1 update ke stats)
         const statRef = doc(db, "stats", "global");
         batch.set(statRef, {
-          total_laporan: increment(judulArr.length),
-          [`kelas_${kelas}`]: increment(judulArr.length),
-          [`pelajaran_${pelajaran}`]: increment(judulArr.length)
+          total_laporan: increment(materiList.length),
+          total_sesi: increment(1),
+          [`kelas_${kelas}`]: increment(materiList.length),
+          [`pelajaran_${pelajaran}`]: increment(materiList.length)
         }, { merge: true });
 
-        // Eksekusi Batch
+        // Eksekusi Batch (HANYA 2 WRITE: 1 setoran sesi + 1 rekap stats)
         await batch.commit();
 
         showToast("Data berhasil disimpan!", "success");
