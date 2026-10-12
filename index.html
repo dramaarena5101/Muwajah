@@ -1152,11 +1152,11 @@
           <p class="app-subtitle">Sistem Pantauan Pembelajaran Santri Terpadu</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <a href="analisis.html"
+          <!-- <a href="analisis.html"
             class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-bold shadow-sm"
             style="font-size:12px;" title="Buka Halaman Analisis & Rekapitulasi">
             <i class="ph-bold ph-chart-line-up fs-6"></i> Analisis & Rekap
-          </a>
+          </a> -->
           <!-- <button class="btn-theme" title="Dashboard Wali Kelas" onclick="showDashboardPinModal()"
             style="display:flex; align-items:center; justify-content:center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 50%; width:36px; height:36px; color:var(--text); cursor:pointer;">
             <i class="ph-bold ph-chart-bar" style="font-size: 18px;"></i>
@@ -2430,7 +2430,7 @@
         try {
           const cached = localStorage.getItem("muwajah_pembimbing_cache");
           if (cached) list = JSON.parse(cached);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // 3. Fallback darurat: pembimbing.json
@@ -2439,7 +2439,7 @@
           const res = await fetch("pembimbing.json");
           const json = await res.json();
           list = json.map(x => x.nama);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       $pem.empty().append('<option value="">— Cari Nama Ustadz —</option>');
