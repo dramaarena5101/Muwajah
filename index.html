@@ -2410,28 +2410,54 @@
     // =============================================
     // LOAD PEMBIMBING (SELECT2)
     // =============================================
-    document.addEventListener("DOMContentLoaded", async () => {
+    async function muatDaftarPembimbing() {
       const $pem = $("#pembimbing");
+      let list = [];
+
+      // 1. Coba ambil dari Firestore settings/pembimbing (hanya 1 read)
       try {
-        const res = await fetch("pembimbing.json");
-        const data = await res.json();
-        $pem.empty().append('<option value="">— Cari Nama Ustadz —</option>');
-        data.forEach(item => {
-          $pem.append(`<option value="${item.nama}">${item.nama}</option>`);
-        });
-        $pem.select2({
-          placeholder: "Ketik nama ustadz...",
-          allowClear: true,
-          width: "resolve"
-        });
-        $(document).on("select2:open", () => {
-          const f = document.querySelector(".select2-search__field");
-          if (f) f.focus();
-        });
+        const snap = await getDoc(doc(db, "settings", "pembimbing"));
+        if (snap.exists() && Array.isArray(snap.data().daftar)) {
+          list = snap.data().daftar;
+          localStorage.setItem("muwajah_pembimbing_cache", JSON.stringify(list));
+        }
       } catch (err) {
-        $pem.html('<option value="">Gagal memuat data ustadz</option>');
+        console.warn("Gagal fetch pembimbing dari Firebase, mencoba cache:", err);
       }
-    });
+
+      // 2. Fallback offline: localStorage
+      if (list.length === 0) {
+        try {
+          const cached = localStorage.getItem("muwajah_pembimbing_cache");
+          if (cached) list = JSON.parse(cached);
+        } catch (e) {}
+      }
+
+      // 3. Fallback darurat: pembimbing.json
+      if (list.length === 0) {
+        try {
+          const res = await fetch("pembimbing.json");
+          const json = await res.json();
+          list = json.map(x => x.nama);
+        } catch (e) {}
+      }
+
+      $pem.empty().append('<option value="">— Cari Nama Ustadz —</option>');
+      list.forEach(nama => {
+        $pem.append(`<option value="${nama}">${nama}</option>`);
+      });
+      $pem.select2({
+        placeholder: "Ketik nama ustadz...",
+        allowClear: true,
+        width: "resolve"
+      });
+      $(document).on("select2:open", () => {
+        const f = document.querySelector(".select2-search__field");
+        if (f) f.focus();
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", muatDaftarPembimbing);
 
     // =============================================
     // QR SCANNER

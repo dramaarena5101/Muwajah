@@ -642,6 +642,12 @@
       </div>
 
       <div class="topbar-actions d-flex align-items-center gap-2 flex-wrap">
+        <button id="btnToggleRealtime" class="btn-action btn-secondary-action" title="Nyalakan pemantauan setoran real-time otomatis detik ini">
+          <i class="ph ph-broadcast" id="iconBroadcast"></i> <span id="textRealtime">Live: OFF</span>
+        </button>
+        <a href="kelola_pembimbing.html" class="btn-action btn-secondary-action" title="Kelola Master Data Pembimbing">
+          <i class="ph ph-chalkboard-teacher"></i> Kelola Pembimbing
+        </a>
         <div class="quota-indicator">
           <i class="ph-bold ph-check"></i> Mode Super Hemat Aktif
         </div>
@@ -989,6 +995,7 @@
                     <th class="text-center">Total Butir Materi</th>
                     <th class="text-center">Jumlah Santri</th>
                     <th class="text-center">Persentase</th>
+                    <th>Pelajaran Terbanyak / Sebaran</th>
                     <th class="text-end">Tindakan</th>
                   </tr>
                 </thead>
@@ -1051,7 +1058,8 @@
       query,
       where,
       orderBy,
-      limit
+      limit,
+      onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -1654,7 +1662,7 @@
       });
     }
 
-    // Render POV Kegiatan
+    // Render POV Kegiatan (Lengkap dengan Sebaran Pelajaran)
     function renderPOVKegiatan(filtered) {
       const kegiatanMap = {};
       const totalCount = filtered.length;
@@ -1666,11 +1674,14 @@
             jenis: j,
             count: 0,
             santriSet: new Set(),
+            mapelMap: {},
             items: []
           };
         }
         kegiatanMap[j].count++;
         kegiatanMap[j].santriSet.add(r.stambuk || r.nama);
+        const p = r.pelajaran || "Lainnya";
+        kegiatanMap[j].mapelMap[p] = (kegiatanMap[j].mapelMap[p] || 0) + 1;
         kegiatanMap[j].items.push(r);
       });
 
@@ -1679,18 +1690,23 @@
       tbodyKegiatan.innerHTML = "";
 
       if (sortedKegiatan.length === 0) {
-        tbodyKegiatan.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data jenis kegiatan</td></tr>`;
+        tbodyKegiatan.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data jenis kegiatan</td></tr>`;
         return;
       }
 
       sortedKegiatan.forEach(k => {
         const pct = totalCount > 0 ? ((k.count / totalCount) * 100).toFixed(1) : 0;
+        const sortedMapel = Object.entries(k.mapelMap).sort((a, b) => b[1] - a[1]);
+        const mapelBadges = sortedMapel.slice(0, 3).map(([mp, cnt]) => `<span class="badge-subtle badge-accent me-1">${mp} (${cnt})</span>`).join("");
+        const moreMapel = sortedMapel.length > 3 ? `<span class="text-muted small">+${sortedMapel.length - 3} lainnya</span>` : "";
+
         tbodyKegiatan.innerHTML += `
           <tr>
             <td class="fw-semibold text-dark">${k.jenis}</td>
             <td class="text-center fw-bold text-primary">${k.count}</td>
             <td class="text-center text-muted">${k.santriSet.size} Santri</td>
             <td class="text-center"><span class="badge-subtle badge-success">${pct}%</span></td>
+            <td>${mapelBadges} ${moreMapel}</td>
             <td class="text-end">
               <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKegiatan('${encodeURIComponent(k.jenis)}')">
                 Rincian
@@ -1954,34 +1970,61 @@
       );
     };
 
-    // 5. Detail Kegiatan (Group by Santri)
-    window.showDetailKegiatan = function(encodedKey) {
+    // 5. Detail Kegiatan (Dikelompokkan per Mata Pelajaran & Santri)
+    window.showDetailKegiatan = function(encodedKey, groupBy = "mapel") {
       const jenis = decodeURIComponent(encodedKey);
       const itemsInKegiatan = flattenedRecords.filter(r => r.jenis === jenis);
 
-      const groupMap = {};
-      itemsInKegiatan.forEach(it => {
-        const sKey = it.stambuk || it.nama;
-        if (!groupMap[sKey]) {
-          groupMap[sKey] = {
-            nama: it.nama,
-            kelas: it.kelas,
-            items: []
-          };
-        }
-        groupMap[sKey].items.push(it);
-      });
+      let groupedData = [];
 
-      const groupedData = Object.values(groupMap).map(sg => ({
-        groupTitle: sg.nama,
-        groupMeta: `Kelas ${sg.kelas || "—"}`,
-        countBadge: `${sg.items.length} Materi`,
-        items: sg.items
-      }));
+      if (groupBy === "mapel") {
+        // Group by Pelajaran (Mata Pelajaran apa saja dalam kegiatan ini)
+        const groupMap = {};
+        itemsInKegiatan.forEach(it => {
+          const p = it.pelajaran || "Lainnya";
+          if (!groupMap[p]) {
+            groupMap[p] = {
+              pelajaran: p,
+              santriSet: new Set(),
+              items: []
+            };
+          }
+          groupMap[p].santriSet.add(it.stambuk || it.nama);
+          groupMap[p].items.push(it);
+        });
+
+        groupedData = Object.values(groupMap).sort((a, b) => b.items.length - a.items.length).map(gp => ({
+          groupTitle: gp.pelajaran,
+          groupMeta: `${gp.santriSet.size} Santri Menyetor`,
+          countBadge: `${gp.items.length} Butir Materi`,
+          items: gp.items
+        }));
+      } else {
+        // Group by Santri
+        const groupMap = {};
+        itemsInKegiatan.forEach(it => {
+          const sKey = it.stambuk || it.nama;
+          if (!groupMap[sKey]) {
+            groupMap[sKey] = {
+              nama: it.nama,
+              kelas: it.kelas,
+              items: []
+            };
+          }
+          groupMap[sKey].items.push(it);
+        });
+
+        groupedData = Object.values(groupMap).map(sg => ({
+          groupTitle: sg.nama,
+          groupMeta: `Kelas ${sg.kelas || "—"}`,
+          countBadge: `${sg.items.length} Butir Materi`,
+          items: sg.items
+        }));
+      }
 
       openAccordionModal(
-        `Kegiatan: ${jenis}`,
-        `${groupedData.length} Santri Melaksanakan · Total ${itemsInKegiatan.length} Butir`,
+        `Kegiatan: ${jenis} (Per ${groupBy === 'mapel' ? 'Mata Pelajaran' : 'Santri'})`,
+        `Total ${itemsInKegiatan.length} Butir Materi Disetor pada Kegiatan Ini`,
         groupedData
       );
     };
@@ -2134,6 +2177,65 @@
         if (targetEl) targetEl.style.display = "block";
       });
     });
+
+    // Real-Time Listener Logic (onSnapshot)
+    let isRealtimeActive = false;
+    let realtimeUnsubscribe = null;
+
+    window.toggleRealtime = function() {
+      isRealtimeActive = !isRealtimeActive;
+      const btn = document.getElementById("btnToggleRealtime");
+      const txt = document.getElementById("textRealtime");
+      const icon = document.getElementById("iconBroadcast");
+
+      if (isRealtimeActive) {
+        btn.classList.remove("btn-secondary-action");
+        btn.classList.add("btn-success");
+        btn.style.backgroundColor = "#059669";
+        btn.style.borderColor = "#059669";
+        btn.style.color = "#ffffff";
+        txt.innerHTML = "🔴 Live: ON";
+        if (icon) icon.classList.add("ph-bold");
+        startRealtimeListener();
+      } else {
+        btn.classList.remove("btn-success");
+        btn.classList.add("btn-secondary-action");
+        btn.style.backgroundColor = "";
+        btn.style.borderColor = "";
+        btn.style.color = "";
+        txt.innerHTML = "Live: OFF";
+        if (icon) icon.classList.remove("ph-bold");
+        stopRealtimeListener();
+        window.loadData(true);
+      }
+    };
+
+    function startRealtimeListener() {
+      stopRealtimeListener();
+
+      const setoranCol = collection(db, "setoran");
+      const today = getTodayString();
+      const q = query(setoranCol, where("tanggal_hari", "==", today));
+
+      realtimeUnsubscribe = onSnapshot(q, (snapshot) => {
+        rawSetoranList = [];
+        snapshot.forEach(docSnap => {
+          rawSetoranList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        processAndRender();
+      }, (err) => {
+        console.error("Realtime listener error:", err);
+      });
+    }
+
+    function stopRealtimeListener() {
+      if (typeof realtimeUnsubscribe === "function") {
+        realtimeUnsubscribe();
+        realtimeUnsubscribe = null;
+      }
+    }
+
+    document.getElementById("btnToggleRealtime").addEventListener("click", window.toggleRealtime);
 
     // Inisialisasi awal
     window.loadData();

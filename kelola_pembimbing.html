@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Pembimbing — Muwajjah System</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+
+  <style>
+    /* Design Tokens sesuai desain.md */
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-subtle: #f1f5f9;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #1e293b;
+      --primary-hover: #0f172a;
+      --accent: #2563eb;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      font-size: 13.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .main-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .form-control {
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      outline: none;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color .15s, border-color .15s;
+    }
+
+    .btn-primary-action {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary-action:hover {
+      background: var(--primary-hover);
+      color: #ffffff;
+    }
+
+    .btn-secondary-action {
+      background: var(--surface);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+    .btn-secondary-action:hover {
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-danger-action {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+    .btn-danger-action:hover {
+      background: #fee2e2;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover td {
+      background-color: var(--surface-subtle);
+    }
+
+    .badge-subtle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .metric-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      height: 100%;
+    }
+
+    .spinner-quiet {
+      width: 26px;
+      height: 26px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-container">
+      <div class="d-flex align-items-center gap-3">
+        <a href="index.html" class="btn-action btn-secondary-action" title="Kembali ke Form Setoran">
+          <i class="ph ph-arrow-left"></i> Form Setoran
+        </a>
+        <div>
+          <h1 class="page-title">Kelola Pembimbing & Ustadz</h1>
+          <p class="page-subtitle">Master Data Penyimak Muwajah — Cloud Sync Firebase</p>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <a href="analisis.html" class="btn-action btn-secondary-action">
+          <i class="ph ph-chart-line-up"></i> Dashboard Analisis
+        </a>
+        <button id="btnRefresh" class="btn-action btn-secondary-action" title="Segarkan Data">
+          <i class="ph ph-arrow-clockwise" id="iconRefresh"></i> Segarkan
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-container">
+
+    <!-- METRICS & STATUS -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6 col-12">
+        <div class="metric-box d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Total Pembimbing Terdaftar</div>
+            <div class="fw-bold text-dark mt-1" style="font-size:26px;" id="statTotal">0</div>
+            <div class="text-muted small">Tersimpan di Cloud Firebase</div>
+          </div>
+          <div class="p-3 bg-light rounded-circle text-primary">
+            <i class="ph ph-users-three fs-3"></i>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-12">
+        <div class="metric-box d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted text-uppercase fw-semibold" style="font-size:11px; letter-spacing:0.04em;">Status Penyimpanan Cloud</div>
+            <div class="fw-bold mt-1 text-success" style="font-size:18px;" id="statStatus">
+              <i class="ph-bold ph-check-circle"></i> Terhubung ke Firebase
+            </div>
+            <div class="text-muted small" id="statLastUpdate">Terakhir diperbarui: —</div>
+          </div>
+          <div>
+            <button class="btn-action btn-secondary-action" onclick="showImportModal()">
+              <i class="ph ph-upload-simple"></i> Import / Tempel Massal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL INPUT TAMBAH PEMBIMBING -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><i class="ph ph-user-plus"></i> Tambah Pembimbing Baru</h2>
+      </div>
+      <div class="panel-body">
+        <form id="formTambah" class="row g-2 align-items-center">
+          <div class="col-md-8 col-12">
+            <input type="text" id="inputNamaBaru" class="form-control" placeholder="Tuliskan nama lengkap beserta gelar (contoh: Ust. Ahmad Fauzi, S.Pd.)" required>
+          </div>
+          <div class="col-md-4 col-12">
+            <button type="submit" class="btn-action btn-primary-action w-100" id="btnSimpanBaru">
+              <i class="ph ph-plus"></i> Tambah ke Firebase
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- PANEL DAFTAR PEMBIMBING -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="d-flex align-items-center gap-2">
+          <h2 class="panel-title"><i class="ph ph-list-numbers"></i> Daftar Pembimbing</h2>
+          <span class="badge-subtle" id="badgeJumlah">0 Ustadz</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input type="text" id="searchPembimbing" class="form-control py-1 px-2" style="width:240px; font-size:12px;" placeholder="Cari nama ustadz...">
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="p-5 text-center">
+        <div class="spinner-quiet"></div>
+        <div class="text-muted small">Memuat daftar pembimbing dari Firebase...</div>
+      </div>
+
+      <!-- Table Body -->
+      <div class="panel-body p-0" id="tableWrapper" style="display:none;">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">No</th>
+                <th>Nama Lengkap Ustadz / Pembimbing</th>
+                <th style="width: 140px;" class="text-end">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="bodyPembimbing"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL EDIT NAMA -->
+  <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: var(--radius-md);">
+        <div class="modal-header border-bottom py-3">
+          <h5 class="modal-title fw-bold" style="font-size:15px;">Edit Nama Pembimbing</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label text-muted small fw-semibold">Nama Pembimbing</label>
+          <input type="text" id="inputEditNama" class="form-control" required>
+          <input type="hidden" id="editIndex">
+        </div>
+        <div class="modal-footer border-top py-2">
+          <button type="button" class="btn-action btn-secondary-action" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn-action btn-primary-action" id="btnSimpanEdit">Simpan Perubahan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPORT MASSAL -->
+  <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="border-radius: var(--radius-md);">
+        <div class="modal-header border-bottom py-3">
+          <h5 class="modal-title fw-bold" style="font-size:15px;">Import / Tempel Daftar Pembimbing Massal</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-2">Tempel daftar nama ustadz di bawah ini (1 nama per baris). Nama yang sudah ada tidak akan diduplikasi.</p>
+          <textarea id="textareaImport" class="form-control" rows="10" placeholder="Mohammad Hadana Sabila, S.Ag.&#10;Elang AlFaruqi, S.H.&#10;Emil Fitra Mufti, Lc."></textarea>
+        </div>
+        <div class="modal-footer border-top py-2">
+          <button type="button" class="btn-action btn-secondary-action" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn-action btn-primary-action" id="btnProsesImport">
+            <i class="ph ph-check"></i> Tambahkan ke Daftar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE SCRIPTS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZFTSN6XQsw9SLOkv6KwiIiOXLWRSAKRA",
+      authDomain: "muwajah-5101.firebaseapp.com",
+      projectId: "muwajah-5101",
+      storageBucket: "muwajah-5101.firebasestorage.app",
+      messagingSenderId: "896718761940",
+      appId: "1:896718761940:web:e8c9688433d37d4e907041"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let daftarPembimbing = [];
+
+    // Muat data dari Firestore doc settings/pembimbing
+    async function muatData() {
+      document.getElementById("loadingState").style.display = "block";
+      document.getElementById("tableWrapper").style.display = "none";
+
+      const iconRef = document.getElementById("iconRefresh");
+      if (iconRef) iconRef.classList.add("ph-spin");
+
+      try {
+        const docRef = doc(db, "settings", "pembimbing");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && Array.isArray(docSnap.data().daftar)) {
+          daftarPembimbing = docSnap.data().daftar;
+          const updatedAt = docSnap.data().updated_at;
+          if (updatedAt) {
+            document.getElementById("statLastUpdate").innerText = `Terakhir diperbarui: ${new Date(updatedAt).toLocaleString("id-ID")}`;
+          }
+        } else {
+          // Fallback impor lokal jika belum ada di Firebase
+          const res = await fetch("pembimbing.json");
+          const json = await res.json();
+          daftarPembimbing = json.map(x => x.nama.trim());
+          await simpanKeFirebase(false);
+        }
+
+        renderTabel();
+      } catch (err) {
+        console.error("Gagal muat pembimbing:", err);
+        alert("Gagal memuat data dari Firebase: " + err.message);
+      } finally {
+        if (iconRef) iconRef.classList.remove("ph-spin");
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("tableWrapper").style.display = "block";
+      }
+    }
+
+    // Simpan seluruh daftar ke Firebase (1 Write Aman)
+    async function simpanKeFirebase(showNotification = true) {
+      try {
+        const docRef = doc(db, "settings", "pembimbing");
+        await setDoc(docRef, {
+          daftar: daftarPembimbing,
+          total: daftarPembimbing.length,
+          updated_at: new Date().toISOString()
+        });
+        
+        // Simpan cache lokal
+        localStorage.setItem("muwajah_pembimbing_cache", JSON.stringify(daftarPembimbing));
+
+        if (showNotification) {
+          alert("Perubahan berhasil disimpan ke Cloud Firebase!");
+        }
+      } catch (err) {
+        console.error("Gagal simpan ke Firebase:", err);
+        alert("Gagal menyimpan ke Firebase: " + err.message);
+      }
+    }
+
+    // Render Tabel
+    function renderTabel() {
+      const q = document.getElementById("searchPembimbing").value.toLowerCase().trim();
+      const tbody = document.getElementById("bodyPembimbing");
+      tbody.innerHTML = "";
+
+      let list = daftarPembimbing.map((nama, idx) => ({ nama, originalIndex: idx }));
+      if (q) {
+        list = list.filter(item => item.nama.toLowerCase().includes(q));
+      }
+
+      document.getElementById("statTotal").innerText = daftarPembimbing.length;
+      document.getElementById("badgeJumlah").innerText = `${daftarPembimbing.length} Ustadz`;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Tidak ada nama pembimbing ditemukan</td></tr>`;
+        return;
+      }
+
+      list.forEach((item, no) => {
+        tbody.innerHTML += `
+          <tr>
+            <td class="text-muted fw-semibold">#${no + 1}</td>
+            <td class="fw-semibold text-dark">${item.nama}</td>
+            <td class="text-end">
+              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:12px;" onclick="bukaModalEdit(${item.originalIndex})">
+                <i class="ph ph-pencil-simple"></i> Edit
+              </button>
+              <button class="btn-action btn-danger-action py-1 px-2" style="font-size:12px;" onclick="hapusPembimbing(${item.originalIndex})">
+                <i class="ph ph-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Tambah Pembimbing Baru
+    document.getElementById("formTambah").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nama = document.getElementById("inputNamaBaru").value.trim();
+      if (!nama) return;
+
+      if (daftarPembimbing.some(x => x.toLowerCase() === nama.toLowerCase())) {
+        alert("Nama pembimbing ini sudah terdaftar!");
+        return;
+      }
+
+      daftarPembimbing.unshift(nama);
+      document.getElementById("inputNamaBaru").value = "";
+      renderTabel();
+      await simpanKeFirebase(true);
+    });
+
+    // Buka Modal Edit
+    window.bukaModalEdit = function(index) {
+      document.getElementById("inputEditNama").value = daftarPembimbing[index];
+      document.getElementById("editIndex").value = index;
+      new bootstrap.Modal(document.getElementById("modalEdit")).show();
+    };
+
+    // Simpan Hasil Edit
+    document.getElementById("btnSimpanEdit").addEventListener("click", async () => {
+      const idx = parseInt(document.getElementById("editIndex").value);
+      const namaBaru = document.getElementById("inputEditNama").value.trim();
+      if (!namaBaru) return;
+
+      daftarPembimbing[idx] = namaBaru;
+      bootstrap.Modal.getInstance(document.getElementById("modalEdit")).hide();
+      renderTabel();
+      await simpanKeFirebase(true);
+    });
+
+    // Hapus Pembimbing
+    window.hapusPembimbing = async function(index) {
+      const nama = daftarPembimbing[index];
+      if (confirm(`Yakin ingin menghapus "${nama}" dari daftar pembimbing?`)) {
+        daftarPembimbing.splice(index, 1);
+        renderTabel();
+        await simpanKeFirebase(true);
+      }
+    };
+
+    // Buka Modal Import Massal
+    window.showImportModal = function() {
+      new bootstrap.Modal(document.getElementById("modalImport")).show();
+    };
+
+    // Proses Import Massal
+    document.getElementById("btnProsesImport").addEventListener("click", async () => {
+      const text = document.getElementById("textareaImport").value.trim();
+      if (!text) return;
+
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      let added = 0;
+
+      lines.forEach(l => {
+        if (!daftarPembimbing.some(x => x.toLowerCase() === l.toLowerCase())) {
+          daftarPembimbing.push(l);
+          added++;
+        }
+      });
+
+      bootstrap.Modal.getInstance(document.getElementById("modalImport")).hide();
+      document.getElementById("textareaImport").value = "";
+      daftarPembimbing.sort((a, b) => a.localeCompare(b));
+      renderTabel();
+      await simpanKeFirebase(true);
+      alert(`Berhasil menambahkan ${added} nama pembimbing baru!`);
+    });
+
+    // Event listener pencarian & refresh
+    document.getElementById("searchPembimbing").addEventListener("input", renderTabel);
+    document.getElementById("btnRefresh").addEventListener("click", muatData);
+
+    // Muat data awal
+    muatData();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
