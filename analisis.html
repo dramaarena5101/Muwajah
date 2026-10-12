@@ -815,8 +815,8 @@
             <div class="col-lg-5 col-12">
               <div class="p-2 border rounded" style="background: var(--surface);">
                 <div class="d-flex justify-content-between align-items-center mb-2 px-2 pt-1">
-                  <span class="fw-semibold text-dark" style="font-size: 12px;">Distribusi per Kelas</span>
-                  <span class="text-muted" style="font-size: 11px;">Materi</span>
+                  <span class="fw-semibold text-dark" style="font-size: 12px;">Distribusi Seluruh Kelas (5B – 5S)</span>
+                  <span class="text-muted" style="font-size: 11px;">18 Kelas Lengkap</span>
                 </div>
                 <div style="height: 220px; position: relative;">
                   <canvas id="chartDistribusiKelas"></canvas>
@@ -970,6 +970,17 @@
 
           <!-- TAB 2: POV GURU / USTADZ -->
           <div id="tabGuru" class="tab-content-panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:10.5px; letter-spacing:0.04em;">Filter Status:</span>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-secondary btn-sm active py-1 px-2 btn-filter-guru" data-filter="all" style="font-size:11.5px;">Semua (<span id="countGuruAll">82</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-guru" data-filter="active" style="font-size:11.5px;">Aktif Menyimak (<span id="countGuruActive">0</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-guru" data-filter="zero" style="font-size:11.5px;">Belum Ada Setoran (<span id="countGuruZero">0</span>)</button>
+                </div>
+              </div>
+              <small class="text-muted" id="statGuruSummary" style="font-size:11px;">Seluruh 82 pembimbing dijabarkan lengkap</small>
+            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
@@ -989,6 +1000,16 @@
 
           <!-- TAB 3: POV KELAS -->
           <div id="tabKelas" class="tab-content-panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:10.5px; letter-spacing:0.04em;">Urutan Kelas:</span>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-secondary btn-sm active py-1 px-2 btn-sort-kelas" data-sort="abjad" style="font-size:11.5px;">Urut Abjad (5B – 5S)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-sort-kelas" data-sort="count" style="font-size:11.5px;">Setoran Terbanyak</button>
+                </div>
+              </div>
+              <small class="text-muted" style="font-size:11px;">Semua 18 Kelas 5 dijabarkan langsung (termasuk kelas dengan 0 setoran)</small>
+            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
@@ -1008,6 +1029,17 @@
 
           <!-- TAB 4: POV PELAJARAN -->
           <div id="tabMapel" class="tab-content-panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:10.5px; letter-spacing:0.04em;">Filter Mapel:</span>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-secondary btn-sm active py-1 px-2 btn-filter-mapel" data-filter="all" style="font-size:11.5px;">Semua (<span id="countMapelAll">28</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-mapel" data-filter="active" style="font-size:11.5px;">Aktif Disetor (<span id="countMapelActive">0</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-mapel" data-filter="zero" style="font-size:11.5px;">Belum Ada Setoran (<span id="countMapelZero">0</span>)</button>
+                </div>
+              </div>
+              <small class="text-muted" id="statMapelSummary" style="font-size:11px;">Seluruh mata pelajaran dijabarkan lengkap</small>
+            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
@@ -1024,8 +1056,12 @@
             </div>
           </div>
 
-          <!-- TAB 5: POV KEGIATAN (BARU) -->
+          <!-- TAB 5: POV KEGIATAN -->
           <div id="tabKegiatan" class="tab-content-panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light flex-wrap gap-2">
+              <span class="text-muted text-uppercase fw-semibold" style="font-size:10.5px; letter-spacing:0.04em;">Daftar 6 Kegiatan Standar:</span>
+              <small class="text-muted" style="font-size:11px;">Menghafal, Merangkum, Menggaris, Menanyakan, Latihan, Mengajar</small>
+            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
@@ -1094,6 +1130,8 @@
       getFirestore,
       collection,
       getDocs,
+      doc,
+      getDoc,
       query,
       where,
       orderBy,
@@ -1113,6 +1151,26 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Master Constants
+    const MASTER_KELAS = ["5B", "5C", "5D", "5E", "5F", "5G", "5H", "5I", "5J", "5K", "5L", "5M", "5N", "5O", "5P", "5Q", "5R", "5S"];
+    const MASTER_KEGIATAN = ["Menghafal", "Merangkum", "Menggaris", "Menanyakan", "Latihan", "Mengajar"];
+    const DEFAULT_PELAJARAN_LIST = [
+      "Muthalaah", "Nahwu", "Sharaf", "Balaghah", "Tarikh Adab", "Al-Qur'an",
+      "Tarjamah", "Tafsir", "Hadits", "Musthalah", "Ushul Fiqih", "Tauhid",
+      "Adyan", "Mahfudzat", "Tarbiyah", "Reading", "Grammar", "Bahasa Indonesia",
+      "Tata Negara", "Matematika", "Fisika", "Kimia", "Sejarah", "Kepondokmodernan",
+      "Etiquette", "Serba Serbi", "Juz Amma", "Hafalan Do'a"
+    ];
+
+    let masterPelajaranList = [...DEFAULT_PELAJARAN_LIST];
+    let masterPembimbingList = [];
+
+    // Sub-filter & Sorting state
+    let sortKelasMode = "abjad"; // "abjad" | "count"
+    let filterMapelStatus = "all"; // "all" | "active" | "zero"
+    let filterGuruStatus = "all"; // "all" | "active" | "zero"
+    let latestFilteredRecords = [];
+
     // State
     let rawSetoranList = [];
     let flattenedRecords = [];
@@ -1130,6 +1188,54 @@
 
     const CACHE_KEY = "muwajah_analisis_cache";
     const CACHE_TIME = "muwajah_analisis_time";
+
+    // Muat Master Data Pembimbing (Settings Cloud / Cache / JSON)
+    async function muatMasterPembimbing() {
+      const cached = localStorage.getItem("muwajah_pembimbing_cache");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            masterPembimbingList = parsed.map(p => typeof p === "string" ? p : p.nama).filter(Boolean);
+          }
+        } catch(e) {}
+      }
+
+      try {
+        const docRef = doc(db, "settings", "pembimbing");
+        const snap = await getDoc(docRef);
+        if (snap.exists() && Array.isArray(snap.data().daftar)) {
+          masterPembimbingList = snap.data().daftar.map(p => typeof p === "string" ? p : p.nama).filter(Boolean);
+          localStorage.setItem("muwajah_pembimbing_cache", JSON.stringify(masterPembimbingList));
+          return;
+        }
+      } catch(e) {}
+
+      if (masterPembimbingList.length === 0) {
+        try {
+          const res = await fetch("./pembimbing.json");
+          if (res.ok) {
+            const json = await res.json();
+            masterPembimbingList = json.map(p => typeof p === "string" ? p : p.nama).filter(Boolean);
+            localStorage.setItem("muwajah_pembimbing_cache", JSON.stringify(masterPembimbingList));
+          }
+        } catch(e) {}
+      }
+    }
+
+    // Muat Master Data Pelajaran (Cache LocalStorage / Default)
+    function muatMasterPelajaran() {
+      const cached = localStorage.getItem("muwajah_pelajaran_cache");
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          const keys = Object.keys(data);
+          if (keys.length > 0) {
+            masterPelajaranList = Array.from(new Set([...DEFAULT_PELAJARAN_LIST, ...keys])).sort();
+          }
+        } catch(e) {}
+      }
+    }
 
     function getTodayString() {
       const d = new Date();
@@ -1203,6 +1309,12 @@
 
       const iconRef = document.getElementById("iconRefresh");
       if (iconRef) iconRef.classList.add("ph-spin");
+
+      // Pastikan master pembimbing & pelajaran termuat
+      muatMasterPelajaran();
+      if (masterPembimbingList.length === 0) {
+        await muatMasterPembimbing();
+      }
 
       const range = document.getElementById("filterWaktu").value;
       const cacheRangeKey = `${CACHE_KEY}_${range}`;
@@ -1367,6 +1479,7 @@
         return true;
       });
 
+      latestFilteredRecords = filtered;
       document.getElementById("recordCounter").innerText = `${filtered.length} materi disetor`;
 
       const emptyNotice = document.getElementById("emptyNotice");
@@ -1380,8 +1493,6 @@
       document.getElementById("statSesi").innerText = uniqueDocs.toLocaleString("id-ID");
       const uniqueSantri = new Set(filtered.map(r => r.stambuk || r.nama)).size;
       document.getElementById("statSantri").innerText = uniqueSantri.toLocaleString("id-ID");
-      const uniqueGuru = new Set(filtered.map(r => r.ustadz).filter(Boolean)).size;
-      document.getElementById("statGuru").innerText = uniqueGuru.toLocaleString("id-ID");
 
       // 1. Rekap Santri & Leaderboard (Hitung Rank dengan Ties)
       const santriMap = {};
@@ -1409,36 +1520,16 @@
       renderLeaderboardSantri();
       renderTableSantri(cachedSortedSantri);
 
-      // 2. Rekap Guru & Leaderboard (Hitung Rank dengan Ties)
-      const guruMap = {};
-      filtered.forEach(r => {
-        const u = r.ustadz || "Lainnya";
-        if (!guruMap[u]) {
-          guruMap[u] = {
-            nama: u,
-            count: 0,
-            santriSet: new Set(),
-            mapelMap: {},
-            items: []
-          };
-        }
-        guruMap[u].count++;
-        guruMap[u].santriSet.add(r.stambuk || r.nama);
-        guruMap[u].mapelMap[r.pelajaran] = (guruMap[u].mapelMap[r.pelajaran] || 0) + 1;
-        guruMap[u].items.push(r);
-      });
-      const rawSortedGuru = Object.values(guruMap).sort((a, b) => b.count - a.count);
-      cachedSortedGuru = calculateRankings(rawSortedGuru, "count");
-      renderLeaderboardGuru();
-      renderTableGuru(cachedSortedGuru);
+      // 2. Rekap Guru (Seluruh 82 Master Ustadz + Leaderboard)
+      renderTableGuru(filtered);
 
-      // 3. Rekap POV Kelas & Pelajaran Favorit Per Kelas
+      // 3. Rekap POV Kelas & Pelajaran Favorit Per Kelas (Seluruh 18 Kelas 5B–5S)
       renderPOVKelasDanFavorit(filtered);
 
-      // 4. Rekap POV Pelajaran & Mapel Terfavorit Overall
+      // 4. Rekap POV Pelajaran & Mapel Terfavorit Overall (Seluruh 28+ Master Mapel)
       renderPOVMapel(filtered);
 
-      // 5. Rekap POV Kegiatan
+      // 5. Rekap POV Kegiatan (Seluruh 6 Jenis Kegiatan Standar)
       renderPOVKegiatan(filtered);
 
       // 6. Render Interactive Charts
@@ -1555,42 +1646,135 @@
       });
     }
 
-    // Render Tabel Guru
-    function renderTableGuru(list) {
+    // Render Tabel Guru (Menjabarkan Seluruh 82 Master Pembimbing)
+    function renderTableGuru(filtered) {
+      if (!filtered) filtered = latestFilteredRecords;
+      const guruMap = {};
+
+      // 1. Inisialisasi seluruh pembimbing dari master list
+      const allMasterUstadz = Array.from(new Set([...masterPembimbingList, ...filtered.map(r => r.ustadz).filter(Boolean)])).sort();
+
+      allMasterUstadz.forEach(nama => {
+        guruMap[nama] = {
+          nama: nama,
+          count: 0,
+          santriSet: new Set(),
+          mapelMap: {},
+          items: []
+        };
+      });
+
+      // 2. Hitung setoran dari rekaman filter
+      filtered.forEach(r => {
+        const u = r.ustadz || "Tanpa Ustadz";
+        if (!guruMap[u]) {
+          guruMap[u] = {
+            nama: u,
+            count: 0,
+            santriSet: new Set(),
+            mapelMap: {},
+            items: []
+          };
+        }
+        guruMap[u].count++;
+        guruMap[u].santriSet.add(r.stambuk || r.nama);
+        guruMap[u].mapelMap[r.pelajaran] = (guruMap[u].mapelMap[r.pelajaran] || 0) + 1;
+        guruMap[u].items.push(r);
+      });
+
+      const allList = Object.values(guruMap);
+      const activeList = allList.filter(g => g.count > 0).sort((a, b) => b.count - a.count);
+      const zeroList = allList.filter(g => g.count === 0).sort((a, b) => a.nama.localeCompare(b.nama));
+
+      // Berikan ranking untuk yang aktif
+      const rankedActive = calculateRankings(activeList, "count");
+
+      // Simpan untuk Leaderboard Top 5 / Top 10
+      cachedSortedGuru = rankedActive;
+      renderLeaderboardGuru();
+
+      // Update metrik di card atas
+      const elStatGuru = document.getElementById("statGuru");
+      if (elStatGuru) {
+        elStatGuru.innerText = `${activeList.length} / ${allList.length}`;
+      }
+
+      // Update toolbar count
+      const elCountAll = document.getElementById("countGuruAll");
+      const elCountActive = document.getElementById("countGuruActive");
+      const elCountZero = document.getElementById("countGuruZero");
+      if (elCountAll) elCountAll.innerText = allList.length;
+      if (elCountActive) elCountActive.innerText = activeList.length;
+      if (elCountZero) elCountZero.innerText = zeroList.length;
+
+      const elSummary = document.getElementById("statGuruSummary");
+      if (elSummary) {
+        elSummary.innerText = `${activeList.length} dari ${allList.length} pembimbing aktif menyimak hari ini (${zeroList.length} belum menerima setoran)`;
+      }
+
+      // Terapkan filter status
+      let displayList = [];
+      if (filterGuruStatus === "active") {
+        displayList = rankedActive;
+      } else if (filterGuruStatus === "zero") {
+        displayList = zeroList;
+      } else {
+        displayList = [...rankedActive, ...zeroList];
+      }
+
       const tbody = document.getElementById("bodyGuru");
       tbody.innerHTML = "";
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data ustadz</td></tr>`;
+
+      if (displayList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada ustadz sesuai filter</td></tr>`;
         return;
       }
 
-      list.forEach((g) => {
+      displayList.forEach((g) => {
+        const isZero = g.count === 0;
         const topM = Object.entries(g.mapelMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+        const rankLabel = g.rank ? `#${g.rank}` : "—";
+
         tbody.innerHTML += `
-          <tr>
-            <td class="text-muted fw-semibold">#${g.rank}</td>
-            <td class="fw-semibold text-dark">${g.nama}</td>
-            <td class="text-center"><span class="badge-subtle badge-success fw-bold">${g.count}</span></td>
+          <tr class="${isZero ? 'opacity-75' : ''}">
+            <td class="text-muted fw-semibold">${rankLabel}</td>
+            <td class="fw-semibold ${isZero ? 'text-secondary' : 'text-dark'}">${g.nama}</td>
+            <td class="text-center"><span class="badge-subtle ${isZero ? 'text-muted' : 'badge-success'} fw-bold">${g.count}</span></td>
             <td class="text-center text-muted">${g.santriSet.size} Santri</td>
-            <td>${topM}</td>
+            <td>${isZero ? '<span class="badge-subtle text-muted" style="background:#f8fafc; border-color:#e2e8f0; color:#94a3b8;">Belum menerima setoran</span>' : topM}</td>
             <td class="text-end">
-              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailGuru('${encodeURIComponent(g.nama)}')">
-                Lihat Santri
-              </button>
+              ${isZero 
+                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>'
+                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailGuru('${encodeURIComponent(g.nama)}')">Lihat Santri</button>`
+              }
             </td>
           </tr>
         `;
       });
     }
 
-    // Render POV Kelas, Pelajaran Favorit, & Kegiatan Favorit Per Kelas
+    // Render POV Kelas, Pelajaran Favorit, & Kegiatan Favorit Per Kelas (Menjabarkan Seluruh 18 Kelas 5B–5S)
     function renderPOVKelasDanFavorit(filtered) {
+      if (!filtered) filtered = latestFilteredRecords;
       const kelasMap = {};
-      const kelasMapelCount = {}; // { [kelas]: { [mapel]: count } }
-      const kelasKegiatanCount = {}; // { [kelas]: { [kegiatan]: count } }
+      const kelasMapelCount = {};
+      const kelasKegiatanCount = {};
+
+      // Inisialisasi seluruh 18 kelas B sampai S
+      MASTER_KELAS.forEach(k => {
+        kelasMap[k] = {
+          kelas: k,
+          count: 0,
+          santriSet: new Set(),
+          items: []
+        };
+        kelasMapelCount[k] = {};
+        kelasKegiatanCount[k] = {};
+      });
 
       filtered.forEach(r => {
-        const k = r.kelas || "Tanpa Kelas";
+        const rawK = normalizeKelas(r.kelas) || r.kelas || "Tanpa Kelas";
+        const k = MASTER_KELAS.includes(rawK) ? rawK : rawK;
         if (!kelasMap[k]) {
           kelasMap[k] = {
             kelas: k,
@@ -1612,7 +1796,20 @@
         kelasKegiatanCount[k][j] = (kelasKegiatanCount[k][j] || 0) + 1;
       });
 
-      const sortedKelas = Object.values(kelasMap).sort((a, b) => b.count - a.count);
+      // Filter jika dropdown kelas aktif
+      const currentKelasFilter = document.getElementById("filterKelas").value;
+      let targetClasses = Object.values(kelasMap);
+      if (currentKelasFilter !== "all") {
+        targetClasses = targetClasses.filter(x => x.kelas === currentKelasFilter);
+      }
+
+      // Pengurutan kelas: default abjad (5B s/d 5S) atau count
+      if (sortKelasMode === "count") {
+        targetClasses.sort((a, b) => b.count - a.count || a.kelas.localeCompare(b.kelas));
+      } else {
+        targetClasses.sort((a, b) => a.kelas.localeCompare(b.kelas));
+      }
+
       const tbodyKelas = document.getElementById("bodyKelas");
       tbodyKelas.innerHTML = "";
 
@@ -1622,29 +1819,31 @@
       const tbodyFavKegiatan = document.getElementById("bodyFavKegiatanPerKelas");
       tbodyFavKegiatan.innerHTML = "";
 
-      if (sortedKelas.length === 0) {
+      if (targetClasses.length === 0) {
         tbodyKelas.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data kelas</td></tr>`;
         tbodyFav.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>`;
         tbodyFavKegiatan.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-muted">Belum ada data</td></tr>`;
         return;
       }
 
-      sortedKelas.forEach(k => {
+      targetClasses.forEach(k => {
+        const isZero = k.count === 0;
         const avg = k.santriSet.size > 0 ? (k.count / k.santriSet.size).toFixed(1) : "0";
         const mapelEntries = Object.entries(kelasMapelCount[k.kelas] || {}).sort((a, b) => b[1] - a[1]);
         const topM = mapelEntries[0] ? `${mapelEntries[0][0]} (${mapelEntries[0][1]})` : "—";
 
         tbodyKelas.innerHTML += `
-          <tr>
-            <td class="fw-semibold text-dark">${k.kelas}</td>
-            <td class="text-center">${k.santriSet.size}</td>
-            <td class="text-center fw-bold text-primary">${k.count}</td>
+          <tr class="${isZero ? 'opacity-75' : ''}">
+            <td class="fw-bold ${isZero ? 'text-secondary' : 'text-dark'}">${k.kelas}</td>
+            <td class="text-center ${isZero ? 'text-muted' : ''}">${k.santriSet.size}</td>
+            <td class="text-center fw-bold ${isZero ? 'text-muted' : 'text-primary'}">${k.count}</td>
             <td class="text-center text-muted">${avg}</td>
-            <td><span class="badge-subtle">${topM}</span></td>
+            <td>${isZero ? '<span class="badge-subtle text-muted" style="background:#f8fafc; border-color:#e2e8f0; color:#94a3b8;">Belum ada setoran (0)</span>' : `<span class="badge-subtle">${topM}</span>`}</td>
             <td class="text-end">
-              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKelas('${encodeURIComponent(k.kelas)}')">
-                Rincian
-              </button>
+              ${isZero 
+                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>' 
+                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKelas('${encodeURIComponent(k.kelas)}')">Rincian</button>`
+              }
             </td>
           </tr>
         `;
@@ -1660,6 +1859,15 @@
               <td><span class="badge-subtle badge-accent">${topPName}</span></td>
               <td class="text-center fw-bold">${topPCount} materi</td>
               <td class="text-end text-muted">${pct}% setoran kelas</td>
+            </tr>
+          `;
+        } else {
+          tbodyFav.innerHTML += `
+            <tr class="opacity-75">
+              <td class="fw-semibold text-secondary">${k.kelas}</td>
+              <td><span class="text-muted fst-italic">Belum ada setoran</span></td>
+              <td class="text-center text-muted">0 materi</td>
+              <td class="text-end text-muted">0%</td>
             </tr>
           `;
         }
@@ -1678,13 +1886,37 @@
               <td class="text-end text-muted">${pctK}% setoran kelas</td>
             </tr>
           `;
+        } else {
+          tbodyFavKegiatan.innerHTML += `
+            <tr class="opacity-75">
+              <td class="fw-semibold text-secondary">${k.kelas}</td>
+              <td><span class="text-muted fst-italic">Belum ada setoran</span></td>
+              <td class="text-center text-muted">0 materi</td>
+              <td class="text-end text-muted">0%</td>
+            </tr>
+          `;
         }
       });
     }
 
-    // Render POV Pelajaran & Top Mapel Overall
+    // Render POV Pelajaran & Top Mapel Overall (Menjabarkan Seluruh Master Pelajaran)
     function renderPOVMapel(filtered) {
+      if (!filtered) filtered = latestFilteredRecords;
       const mapelMap = {};
+
+      // 1. Inisialisasi seluruh master pelajaran
+      const allMasterMapel = Array.from(new Set([...masterPelajaranList, ...filtered.map(r => r.pelajaran).filter(Boolean)])).sort();
+
+      allMasterMapel.forEach(p => {
+        mapelMap[p] = {
+          pelajaran: p,
+          count: 0,
+          santriSet: new Set(),
+          jenisMap: {},
+          items: []
+        };
+      });
+
       filtered.forEach(r => {
         const p = r.pelajaran || "Lainnya";
         if (!mapelMap[p]) {
@@ -1702,46 +1934,95 @@
         mapelMap[p].items.push(r);
       });
 
-      const sortedMapel = Object.values(mapelMap).sort((a, b) => b.count - a.count);
+      const allList = Object.values(mapelMap);
+      const activeList = allList.filter(m => m.count > 0).sort((a, b) => b.count - a.count);
+      const zeroList = allList.filter(m => m.count === 0).sort((a, b) => a.pelajaran.localeCompare(b.pelajaran));
+
+      // Update Toolbar counters
+      const elCountAll = document.getElementById("countMapelAll");
+      const elCountActive = document.getElementById("countMapelActive");
+      const elCountZero = document.getElementById("countMapelZero");
+      if (elCountAll) elCountAll.innerText = allList.length;
+      if (elCountActive) elCountActive.innerText = activeList.length;
+      if (elCountZero) elCountZero.innerText = zeroList.length;
+
+      const elSummary = document.getElementById("statMapelSummary");
+      if (elSummary) {
+        elSummary.innerText = `${activeList.length} dari ${allList.length} mata pelajaran aktif hari ini (${zeroList.length} belum disetor)`;
+      }
+
+      // Pelajaran Terfavorit Overall
+      if (activeList.length > 0) {
+        const topOverall = activeList[0];
+        document.getElementById("favOverallTitle").innerText = topOverall.pelajaran;
+        const totalAll = filtered.length;
+        const pctOverall = totalAll > 0 ? Math.round((topOverall.count / totalAll) * 100) : 0;
+        document.getElementById("favOverallSub").innerText = `${topOverall.count} materi disetor (${pctOverall}% dari total)`;
+      } else {
+        document.getElementById("favOverallTitle").innerText = "—";
+        document.getElementById("favOverallSub").innerText = "0 materi disetor";
+      }
+
+      // Terapkan filterMapelStatus
+      let displayList = [];
+      if (filterMapelStatus === "active") {
+        displayList = activeList;
+      } else if (filterMapelStatus === "zero") {
+        displayList = zeroList;
+      } else {
+        displayList = [...activeList, ...zeroList];
+      }
+
       const tbodyMapel = document.getElementById("bodyMapel");
       tbodyMapel.innerHTML = "";
 
-      if (sortedMapel.length === 0) {
-        tbodyMapel.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data pelajaran</td></tr>`;
-        document.getElementById("favOverallTitle").innerText = "—";
-        document.getElementById("favOverallSub").innerText = "0 materi disetor";
+      if (displayList.length === 0) {
+        tbodyMapel.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data pelajaran sesuai filter</td></tr>`;
         return;
       }
 
-      // Pelajaran Terfavorit Overall Kelas 5
-      const topOverall = sortedMapel[0];
-      document.getElementById("favOverallTitle").innerText = topOverall.pelajaran;
-      const totalAll = filtered.length;
-      const pctOverall = totalAll > 0 ? Math.round((topOverall.count / totalAll) * 100) : 0;
-      document.getElementById("favOverallSub").innerText = `${topOverall.count} materi disetor (${pctOverall}% dari total)`;
-
-      sortedMapel.forEach(m => {
+      displayList.forEach(m => {
+        const isZero = m.count === 0;
         const topJ = Object.entries(m.jenisMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+
         tbodyMapel.innerHTML += `
-          <tr>
-            <td class="fw-semibold text-dark">${m.pelajaran}</td>
-            <td class="text-center fw-bold text-primary">${m.count}</td>
+          <tr class="${isZero ? 'opacity-75' : ''}">
+            <td class="fw-semibold ${isZero ? 'text-secondary' : 'text-dark'}">${m.pelajaran}</td>
+            <td class="text-center fw-bold ${isZero ? 'text-muted' : 'text-primary'}">${m.count}</td>
             <td class="text-center text-muted">${m.santriSet.size}</td>
-            <td><span class="badge-subtle">${topJ}</span></td>
+            <td>
+              ${isZero 
+                ? '<span class="badge-subtle text-muted" style="background:#f8fafc; border-color:#e2e8f0; color:#94a3b8;">Belum dipelajari (0)</span>' 
+                : `<span class="badge-subtle">${topJ}</span>`
+              }
+            </td>
             <td class="text-end">
-              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailMapel('${encodeURIComponent(m.pelajaran)}')">
-                Rincian
-              </button>
+              ${isZero 
+                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>'
+                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailMapel('${encodeURIComponent(m.pelajaran)}')">Rincian</button>`
+              }
             </td>
           </tr>
         `;
       });
     }
 
-    // Render POV Kegiatan (Lengkap dengan Sebaran Pelajaran)
+    // Render POV Kegiatan (Menjabarkan Seluruh 6 Kegiatan Standar)
     function renderPOVKegiatan(filtered) {
+      if (!filtered) filtered = latestFilteredRecords;
       const kegiatanMap = {};
       const totalCount = filtered.length;
+
+      // Inisialisasi seluruh 6 master kegiatan
+      MASTER_KEGIATAN.forEach(j => {
+        kegiatanMap[j] = {
+          jenis: j,
+          count: 0,
+          santriSet: new Set(),
+          mapelMap: {},
+          items: []
+        };
+      });
 
       filtered.forEach(r => {
         const j = r.jenis || "Lainnya";
@@ -1765,54 +2046,57 @@
       const tbodyKegiatan = document.getElementById("bodyKegiatan");
       tbodyKegiatan.innerHTML = "";
 
-      if (sortedKegiatan.length === 0) {
-        tbodyKegiatan.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data jenis kegiatan</td></tr>`;
+      // Kegiatan Terfavorit No. 1 Keseluruhan
+      const activeKegiatan = sortedKegiatan.filter(k => k.count > 0);
+      if (activeKegiatan.length > 0) {
+        const topKegiatanOverall = activeKegiatan[0];
+        document.getElementById("favKegiatanOverallTitle").innerText = topKegiatanOverall.jenis;
+        const pctKAll = totalCount > 0 ? Math.round((topKegiatanOverall.count / totalCount) * 100) : 0;
+        document.getElementById("favKegiatanOverallSub").innerText = `${topKegiatanOverall.count} materi disetor (${pctKAll}% dari total kegiatan)`;
+      } else {
         document.getElementById("favKegiatanOverallTitle").innerText = "—";
         document.getElementById("favKegiatanOverallSub").innerText = "0 materi disetor";
-        return;
       }
 
-      // Kegiatan Terfavorit No. 1 Keseluruhan
-      const topKegiatanOverall = sortedKegiatan[0];
-      document.getElementById("favKegiatanOverallTitle").innerText = topKegiatanOverall.jenis;
-      const pctKAll = totalCount > 0 ? Math.round((topKegiatanOverall.count / totalCount) * 100) : 0;
-      document.getElementById("favKegiatanOverallSub").innerText = `${topKegiatanOverall.count} materi disetor (${pctKAll}% dari total kegiatan)`;
-
       sortedKegiatan.forEach(k => {
+        const isZero = k.count === 0;
         const pct = totalCount > 0 ? ((k.count / totalCount) * 100).toFixed(1) : 0;
         const sortedMapel = Object.entries(k.mapelMap).sort((a, b) => b[1] - a[1]);
         const mapelBadges = sortedMapel.slice(0, 3).map(([mp, cnt]) => `<span class="badge-subtle badge-accent me-1">${mp} (${cnt})</span>`).join("");
         const moreMapel = sortedMapel.length > 3 ? `<span class="text-muted small">+${sortedMapel.length - 3} lainnya</span>` : "";
 
         tbodyKegiatan.innerHTML += `
-          <tr>
-            <td class="fw-semibold text-dark">${k.jenis}</td>
-            <td class="text-center fw-bold text-primary">${k.count}</td>
+          <tr class="${isZero ? 'opacity-75' : ''}">
+            <td class="fw-semibold ${isZero ? 'text-secondary' : 'text-dark'}">${k.jenis}</td>
+            <td class="text-center fw-bold ${isZero ? 'text-muted' : 'text-primary'}">${k.count}</td>
             <td class="text-center text-muted">${k.santriSet.size} Santri</td>
-            <td class="text-center"><span class="badge-subtle badge-success">${pct}%</span></td>
-            <td>${mapelBadges} ${moreMapel}</td>
+            <td class="text-center"><span class="badge-subtle ${isZero ? 'text-muted' : 'badge-success'}">${pct}%</span></td>
+            <td>${isZero ? '<span class="text-muted small fst-italic">Belum ada aktivitas</span>' : `${mapelBadges} ${moreMapel}`}</td>
             <td class="text-end">
-              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKegiatan('${encodeURIComponent(k.jenis)}')">
-                Rincian
-              </button>
+              ${isZero 
+                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>'
+                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKegiatan('${encodeURIComponent(k.jenis)}')">Rincian</button>`
+              }
             </td>
           </tr>
         `;
       });
     }
 
-    // Render Interactive Charts (Chart.js)
+    // Render Interactive Charts (Chart.js) — 18 Kelas Urut Abjad, 6 Kegiatan, Top Mapel
     function renderInteractiveCharts(filtered) {
       try {
         if (typeof Chart === "undefined") return;
 
-        // Chart 1: Kelas Distribution (Bar)
+        // Chart 1: Kelas Distribution (Bar) — 18 Kelas 5B s/d 5S Urut Abjad Lengkap!
         const kelasCounts = {};
+        MASTER_KELAS.forEach(k => kelasCounts[k] = 0);
         filtered.forEach(r => {
-          const k = r.kelas || "Tanpa Kelas";
-          kelasCounts[k] = (kelasCounts[k] || 0) + 1;
+          const k = normalizeKelas(r.kelas) || r.kelas;
+          if (kelasCounts[k] !== undefined) {
+            kelasCounts[k]++;
+          }
         });
-        const sortedK = Object.entries(kelasCounts).sort((a, b) => b[1] - a[1]);
 
         const ctxKelas = document.getElementById("chartDistribusiKelas");
         if (ctxKelas) {
@@ -1820,18 +2104,28 @@
           chartKelasInstance = new Chart(ctxKelas, {
             type: "bar",
             data: {
-              labels: sortedK.map(x => x[0]),
+              labels: MASTER_KELAS,
               datasets: [{
                 label: "Materi Disetor",
-                data: sortedK.map(x => x[1]),
-                backgroundColor: "#1e293b",
+                data: MASTER_KELAS.map(k => kelasCounts[k]),
+                backgroundColor: MASTER_KELAS.map(k => kelasCounts[k] > 0 ? "#1e293b" : "#cbd5e1"),
                 borderRadius: 4
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const val = context.raw;
+                      return val > 0 ? `${val} materi disetor` : `Belum ada setoran (0)`;
+                    }
+                  }
+                }
+              },
               scales: {
                 y: { grid: { color: "#f1f5f9" }, beginAtZero: true },
                 x: { grid: { display: false } }
@@ -1875,13 +2169,29 @@
           });
         }
 
-        // Chart 3: Proporsi Jenis Kegiatan (Doughnut)
-        const jenisCounts = {};
+        // Chart 3: Proporsi Jenis Kegiatan (Doughnut) — Memetakan Seluruh 6 Kegiatan Standar
+        const kegiatanCounts = {};
+        MASTER_KEGIATAN.forEach(j => kegiatanCounts[j] = 0);
         filtered.forEach(r => {
           const j = r.jenis || "Lainnya";
-          jenisCounts[j] = (jenisCounts[j] || 0) + 1;
+          if (kegiatanCounts[j] !== undefined) {
+            kegiatanCounts[j]++;
+          } else {
+            kegiatanCounts[j] = (kegiatanCounts[j] || 0) + 1;
+          }
         });
-        const sortedJ = Object.entries(jenisCounts).sort((a, b) => b[1] - a[1]);
+
+        const kegiatanLabels = Object.keys(kegiatanCounts);
+        const kegiatanValues = Object.values(kegiatanCounts);
+        const kegiatanColors = [
+          "#0f766e", // Menghafal
+          "#2563eb", // Merangkum
+          "#d97706", // Menggaris
+          "#7c3aed", // Menanyakan
+          "#059669", // Latihan
+          "#dc2626", // Mengajar
+          "#64748b"  // Lainnya
+        ];
 
         const ctxKegiatan = document.getElementById("chartJenisKegiatan");
         if (ctxKegiatan) {
@@ -1889,16 +2199,10 @@
           chartKegiatanInstance = new Chart(ctxKegiatan, {
             type: "doughnut",
             data: {
-              labels: sortedJ.map(x => x[0]),
+              labels: kegiatanLabels,
               datasets: [{
-                data: sortedJ.map(x => x[1]),
-                backgroundColor: [
-                  "#0f766e",
-                  "#d97706",
-                  "#4f46e5",
-                  "#dc2626",
-                  "#64748b"
-                ],
+                data: kegiatanValues,
+                backgroundColor: kegiatanColors.slice(0, kegiatanLabels.length),
                 borderWidth: 1
               }]
             },
@@ -1908,7 +2212,7 @@
               plugins: {
                 legend: {
                   position: "bottom",
-                  labels: { boxWidth: 12, font: { size: 11 } }
+                  labels: { boxWidth: 10, font: { size: 10.5, family: "Inter" } }
                 }
               },
               cutout: "68%"
@@ -2249,6 +2553,36 @@
     document.getElementById("filterSemester").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterKelas").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterSearch").addEventListener("input", applyFiltersAndCalculate);
+
+    // Sub-Filter Guru Listener
+    document.querySelectorAll(".btn-filter-guru").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-filter-guru").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filterGuruStatus = btn.dataset.filter;
+        renderTableGuru(latestFilteredRecords);
+      });
+    });
+
+    // Sub-Filter Urutan Kelas Listener
+    document.querySelectorAll(".btn-sort-kelas").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-sort-kelas").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        sortKelasMode = btn.dataset.sort;
+        renderPOVKelasDanFavorit(latestFilteredRecords);
+      });
+    });
+
+    // Sub-Filter Mapel Listener
+    document.querySelectorAll(".btn-filter-mapel").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-filter-mapel").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filterMapelStatus = btn.dataset.filter;
+        renderPOVMapel(latestFilteredRecords);
+      });
+    });
 
     // Tab Switching
     document.querySelectorAll(".tab-item").forEach(tab => {
