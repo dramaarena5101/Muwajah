@@ -4,541 +4,836 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analisis & Rekapitulasi Muwajah</title>
-  <!-- Google Fonts -->
+  <title>Analisis Setoran — Muwajjah System</title>
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Bootstrap 5 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Phosphor Icons -->
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+  <!-- Phosphor Icons (Consistent line stroke) -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <!-- SheetJS (Excel Export) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
+    /* ========================================================
+       DESIGN TOKENS (Neutral-first, restrained, professional)
+       Ref: desain.md (Laravel admin style)
+       ======================================================== */
     :root {
-      --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --text-faint: #94a3b8;
+      --surface: #ffffff;
+      --surface-subtle: #f1f5f9;
       --border: #e2e8f0;
-      --primary: #4338ca;
-      --primary-light: #e0e7ff;
-      --accent: #0ea5e9;
-      --success: #10b981;
-      --success-light: #dcfce7;
-      --warning: #f59e0b;
-      --warning-light: #fef3c7;
-      --danger: #ef4444;
-      --radius: 16px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 20px -2px rgba(0,0,0,0.06);
+      --border-subtle: #edf2f7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      
+      --primary: #1e293b;
+      --primary-hover: #0f172a;
+      --accent: #2563eb;
+      --accent-subtle: #eff6ff;
+      --accent-border: #bfdbfe;
+
+      --success-bg: #ecfdf5;
+      --success-text: #065f46;
+      --success-border: #a7f3d0;
+
+      --warning-bg: #fffbeb;
+      --warning-text: #92400e;
+      --warning-border: #fde68a;
+
+      --danger-bg: #fef2f2;
+      --danger-text: #991b1b;
+      --danger-border: #fecaca;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+
+      --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
     }
 
-    [data-theme="dark"] {
-      --bg: #0b0f19;
-      --card-bg: #131b2e;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --text-faint: #64748b;
-      --border: #1e293b;
-      --primary: #6366f1;
-      --primary-light: rgba(99, 102, 241, 0.15);
-      --shadow-md: 0 4px 25px -2px rgba(0,0,0,0.3);
+    * {
+      box-sizing: border-box;
     }
 
     body {
-      background: var(--bg);
-      font-family: var(--font);
-      color: var(--text);
-      min-height: 100vh;
-      padding-bottom: 60px;
-      transition: background .2s ease, color .2s ease;
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .navbar-custom {
-      background: var(--card-bg);
+    /* Topbar */
+    .topbar {
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 14px 0;
+      padding: 12px 24px;
       position: sticky;
       top: 0;
-      z-index: 100;
-      backdrop-filter: blur(10px);
+      z-index: 50;
     }
 
-    .stat-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: var(--shadow-sm);
-      height: 100%;
-      transition: all .2s;
+    .topbar-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    .stat-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+      letter-spacing: -0.02em;
     }
 
-    .hero-winner-card {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%);
-      color: white;
-      border-radius: var(--radius);
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Layout */
+    .main-container {
+      max-width: 1360px;
+      margin: 0 auto;
       padding: 24px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 25px -5px rgba(67, 56, 202, 0.35);
     }
 
-    .hero-winner-card.guru {
-      background: linear-gradient(135deg, #064e3b 0%, #065f46 60%, #059669 100%);
-      box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.35);
+    /* Cards */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
     }
 
-    .hero-winner-badge {
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .form-control, .form-select {
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      color: var(--text-main);
+      background-color: var(--surface);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      outline: none;
+    }
+
+    /* Buttons */
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color .15s, border-color .15s;
+    }
+
+    .btn-primary-action {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary-action:hover {
+      background: var(--primary-hover);
+      color: #ffffff;
+    }
+
+    .btn-secondary-action {
+      background: var(--surface);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+    .btn-secondary-action:hover {
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-excel {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #0f766e;
+    }
+    .btn-excel:hover {
+      background: #115e59;
+      color: #ffffff;
+    }
+
+    /* Stat Metric Boxes */
+    .metric-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      height: 100%;
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .metric-helper {
+      font-size: 12px;
+      color: var(--text-subtle);
+      margin-top: 4px;
+    }
+
+    /* Editorial Highlight Cards (Man of the Day & Ustadz of the Day) */
+    .editorial-highlight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-subtle);
+      height: 100%;
+    }
+
+    .editorial-highlight-card.guru {
+      border-left-color: #0f766e;
+    }
+
+    .editorial-tag {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 12px;
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.2);
-      font-size: 11px;
+    }
+
+    .highlight-name {
+      font-size: 18px;
       font-weight: 700;
-      letter-spacing: .5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
+      color: var(--text-main);
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
     }
 
-    .custom-pill-tab {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 4px;
-      display: inline-flex;
+    .highlight-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .highlight-stat-pill {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
       gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      overflow-x: auto;
     }
 
-    .custom-pill-tab .btn-tab {
+    .tab-item {
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
       border: none;
+      border-bottom: 2px solid transparent;
       background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+
+    .tab-item:hover {
+      color: var(--text-main);
+    }
+
+    .tab-item.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--surface-subtle);
       color: var(--text-muted);
       font-weight: 600;
-      font-size: 13px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      transition: all .2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .custom-pill-tab .btn-tab.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 2px 8px rgba(67, 56, 202, 0.3);
-    }
-
-    .table-custom {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .table-custom table {
-      margin: 0;
-      font-size: 13px;
-    }
-
-    .table-custom th {
-      background: rgba(0, 0, 0, 0.02);
-      color: var(--text-muted);
-      font-weight: 700;
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      text-transform: uppercase;
+      padding: 10px 14px;
       font-size: 11px;
-      letter-spacing: .5px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
 
-    .table-custom td {
-      padding: 12px 16px;
+    .data-table td {
+      padding: 11px 14px;
       border-bottom: 1px solid var(--border);
+      color: var(--text-main);
       vertical-align: middle;
     }
 
-    .table-custom tr:last-child td {
+    .data-table tr:hover td {
+      background-color: var(--surface-subtle);
+    }
+
+    .data-table tr:last-child td {
       border-bottom: none;
     }
 
-    .table-custom tr:hover td {
-      background: rgba(0, 0, 0, 0.015);
-    }
-
-    .btn-export {
-      background: #107c41;
-      color: white;
-      border: none;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 9px 18px;
-      border-radius: 10px;
+    /* Badges */
+    .badge-subtle {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      transition: all .2s;
-      box-shadow: 0 2px 8px rgba(16, 124, 65, 0.25);
-    }
-
-    .btn-export:hover {
-      background: #0b5a2f;
-      color: white;
-      transform: translateY(-1px);
-    }
-
-    .filter-panel {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 24px;
-    }
-
-    .quota-badge {
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
       font-size: 11.5px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
-      background: var(--success-light);
-      color: var(--success);
+      font-weight: 500;
+      line-height: 1.3;
+      border: 1px solid var(--border);
+      background: var(--surface-subtle);
+      color: var(--text-main);
+    }
+
+    .badge-accent {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+
+    .badge-success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border-color: var(--success-border);
+    }
+
+    .badge-warning {
+      background: var(--warning-bg);
+      color: var(--warning-text);
+      border-color: var(--warning-border);
+    }
+
+    /* Quota alert badge */
+    .quota-indicator {
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      font-size: 11.5px;
+      color: var(--success-text);
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
     }
 
-    .clickable-row {
-      cursor: pointer;
+    /* Loading skeleton & spinner */
+    #loadingState {
+      padding: 48px 16px;
+      text-align: center;
+    }
+
+    .spinner-quiet {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 991px) {
+      .topbar-container {
+        gap: 12px;
+      }
+      .page-title {
+        font-size: 17px;
+      }
+      .metric-value {
+        font-size: 22px;
+      }
+      .editorial-highlight-card {
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 14px 10px;
+      }
+      .topbar {
+        padding: 10px 12px;
+      }
+      .page-title {
+        font-size: 15px;
+      }
+      .page-subtitle {
+        font-size: 11px;
+      }
+      .filter-bar {
+        padding: 12px;
+        margin-bottom: 14px;
+      }
+      .metric-box {
+        padding: 12px;
+      }
+      .metric-value {
+        font-size: 19px;
+      }
+      .metric-label {
+        font-size: 10px;
+      }
+      .metric-helper {
+        font-size: 11px;
+      }
+      .editorial-highlight-card {
+        padding: 14px;
+      }
+      .highlight-name {
+        font-size: 16px;
+      }
+      .highlight-stat-pill {
+        font-size: 18px;
+      }
+      .data-table th, .data-table td {
+        padding: 9px 10px;
+        font-size: 12px;
+      }
+      .tab-item {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .quota-indicator {
+        font-size: 10.5px;
+        padding: 3px 8px;
+      }
+      .btn-action {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- ================= NAVBAR ================= -->
-  <nav class="navbar-custom mb-4">
-    <div class="container-fluid px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+  <!-- ================= TOPBAR ================= -->
+  <header class="topbar">
+    <div class="topbar-container">
       <div class="d-flex align-items-center gap-3">
-        <a href="index.html" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 rounded-pill px-3" title="Kembali ke Form Setoran">
-          <i class="ph-bold ph-arrow-left"></i> Form Setoran
+        <a href="index.html" class="btn-action btn-secondary-action" title="Kembali ke Form Setoran">
+          <i class="ph ph-arrow-left"></i> Form Setoran
         </a>
-        <div class="d-flex align-items-center gap-2">
-          <div style="background:var(--primary); color:white; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
-            <i class="ph-duotone ph-chart-line-up fs-5"></i>
-          </div>
-          <div>
-            <h5 class="m-0 fw-bold" style="font-size:16px;">Analisis & Rekapitulasi Muwajah</h5>
-            <small class="text-muted" style="font-size:12px;">Sistem Pantauan Multi-POV Real-Time</small>
-          </div>
+        <div>
+          <h1 class="page-title">Analisis Setoran Muwajah</h1>
+          <p class="page-subtitle">Sistem Rekapitulasi Pembelajaran & Monitoring Wali Kelas</p>
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
-        <div class="quota-badge">
-          <i class="ph-bold ph-lightning"></i> Mode Super Hemat (1 Read/Sesi)
+      <div class="topbar-actions d-flex align-items-center gap-2 flex-wrap">
+        <div class="quota-indicator">
+          <i class="ph-bold ph-check"></i> Mode Super Hemat Aktif
         </div>
-        <button id="btnExportExcel" class="btn-export">
-          <i class="ph-bold ph-file-xls fs-5"></i> Export Excel
+        <button id="btnExportExcel" class="btn-action btn-excel" title="Download Excel Rapi">
+          <i class="ph ph-file-xls"></i> Export Excel
         </button>
-        <button id="btnRefresh" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-2" title="Segarkan Data">
-          <i class="ph-bold ph-arrows-clockwise" id="iconRefresh"></i> Segarkan
+        <button id="btnRefresh" class="btn-action btn-secondary-action" title="Segarkan Data Baru">
+          <i class="ph ph-arrow-clockwise" id="iconRefresh"></i> Segarkan
         </button>
       </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- ================= CONTAINER ================= -->
-  <div class="container-fluid px-4">
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="main-container">
 
     <!-- FILTER BAR -->
-    <div class="filter-panel">
-      <div class="row g-3 align-items-center">
-        <div class="col-md-3">
-          <label class="form-label small fw-bold text-muted mb-1"><i class="ph-bold ph-calendar me-1"></i> Rentang Waktu</label>
-          <select id="filterWaktu" class="form-select form-select-sm fw-bold">
-            <option value="today" selected>Hari Ini (Super Hemat)</option>
+    <div class="filter-bar">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3 col-sm-6">
+          <label class="filter-label">Rentang Waktu</label>
+          <select id="filterWaktu" class="form-select">
+            <option value="today" selected>Hari Ini</option>
             <option value="7days">7 Hari Terakhir</option>
             <option value="30days">30 Hari Terakhir</option>
-            <option value="all">Semua Data (Seluruh Waktu)</option>
+            <option value="all">Semua Data</option>
           </select>
         </div>
 
-        <div class="col-md-3">
-          <label class="form-label small fw-bold text-muted mb-1"><i class="ph-bold ph-book-open me-1"></i> Filter Semester</label>
-          <select id="filterSemester" class="form-select form-select-sm fw-bold">
+        <div class="col-md-3 col-sm-6">
+          <label class="filter-label">Semester</label>
+          <select id="filterSemester" class="form-select">
             <option value="all">Semua Semester</option>
             <option value="2" selected>Semester 2 (Aktif)</option>
             <option value="1">Semester 1</option>
           </select>
         </div>
 
-        <div class="col-md-3">
-          <label class="form-label small fw-bold text-muted mb-1"><i class="ph-bold ph-chalkboard-simple me-1"></i> Filter Kelas</label>
-          <select id="filterKelas" class="form-select form-select-sm fw-bold">
+        <div class="col-md-3 col-sm-6">
+          <label class="filter-label">Kelas</label>
+          <select id="filterKelas" class="form-select">
             <option value="all">Semua Kelas</option>
           </select>
         </div>
 
-        <div class="col-md-3">
-          <label class="form-label small fw-bold text-muted mb-1"><i class="ph-bold ph-magnifying-glass me-1"></i> Cari Santri / Ustadz</label>
-          <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Ketik nama atau stambuk...">
+        <div class="col-md-3 col-sm-6">
+          <label class="filter-label">Pencarian Cepat</label>
+          <input type="text" id="filterSearch" class="form-control" placeholder="Cari santri, stambuk, mapel...">
         </div>
       </div>
     </div>
 
-    <!-- LOADING SPINNER -->
-    <div id="loadingArea" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-      <p class="text-muted mt-3 fw-semibold">Memuat data analitik dari Firebase...</p>
+    <!-- LOADING STATE -->
+    <div id="loadingState">
+      <div class="spinner-quiet"></div>
+      <div style="font-size: 13px; color: var(--text-muted);">Memuat data analitik...</div>
     </div>
 
-    <!-- MAIN DASHBOARD CONTENT -->
-    <div id="contentArea" style="display:none;">
+    <!-- ERROR STATE (Jika terjadi kendala) -->
+    <div id="errorState" style="display:none;" class="panel p-4 text-center">
+      <div style="color: var(--danger-text); font-weight: 600; margin-bottom: 6px;">Gagal memuat data dari Firebase</div>
+      <p id="errorMessage" class="text-muted small m-0"></p>
+      <button onclick="loadData(true)" class="btn-action btn-secondary-action mt-3">Coba Lagi</button>
+    </div>
 
-      <!-- ================= HERO HONOR BOARD ================= -->
-      <div class="row g-4 mb-4">
-        <!-- MAN OF THE DAY (SANTRI) -->
+    <!-- CONTENT WRAPPER -->
+    <div id="contentWrapper" style="display:none;">
+
+      <!-- Notifikasi jika filter waktu kosong -->
+      <div id="emptyNotice" class="alert alert-light border py-2 px-3 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-radius: var(--radius-sm); font-size: 13px; display: none;">
+        <div class="d-flex align-items-center gap-2 text-muted">
+          <i class="ph ph-info fs-5 text-secondary"></i>
+          <span>Belum ada data setoran untuk rentang waktu ini.</span>
+        </div>
+        <button type="button" class="btn-action btn-secondary-action py-1 px-2" style="font-size: 11.5px;" onclick="document.getElementById('filterWaktu').value='all'; window.loadData(true);">
+          Tampilkan Semua Data
+        </button>
+      </div>
+
+      <!-- ================= EDITORIAL HIGHLIGHT CARDS ================= -->
+      <div class="row g-3 mb-4">
+        <!-- Man of the Day (Santri) -->
         <div class="col-lg-6">
-          <div class="hero-winner-card">
-            <div class="hero-winner-badge">
-              <i class="ph-fill ph-crown text-warning"></i> Man of The Day (Santri)
+          <div class="editorial-highlight-card">
+            <div class="editorial-tag">
+              <i class="ph ph-user"></i> Man of The Day (Santri Terbanyak)
             </div>
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center justify-content-between gap-3">
               <div>
-                <h3 class="fw-bold mb-1" id="motdNama">—</h3>
-                <p class="m-0 text-white-50 small">
-                  Kelas: <strong class="text-white" id="motdKelas">—</strong> | Stambuk: <strong class="text-white" id="motdStambuk">—</strong>
-                </p>
-                <div class="mt-2 text-white-50 small" id="motdDetail">
-                  Penyimak: <span class="text-white" id="motdUstadz">—</span>
+                <h3 class="highlight-name" id="motdNama">—</h3>
+                <div class="highlight-meta">
+                  Kelas: <span class="fw-semibold text-dark" id="motdKelas">—</span> &nbsp;·&nbsp;
+                  Stambuk: <span class="text-dark" id="motdStambuk">—</span>
+                </div>
+                <div class="highlight-meta mt-1">
+                  Penyimak: <span id="motdUstadz">—</span>
                 </div>
               </div>
               <div class="text-end">
-                <div class="display-6 fw-bold text-warning" id="motdTotal">0</div>
-                <small class="text-white-50 text-uppercase fw-bold" style="font-size:11px;">Materi Disetor</small>
+                <div class="highlight-stat-pill" id="motdTotal">0</div>
+                <div class="metric-helper">Materi Disetor</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- MAN OF GURU (USTADZ) -->
+        <!-- Ustadz of the Day (Guru Teraktif) -->
         <div class="col-lg-6">
-          <div class="hero-winner-card guru">
-            <div class="hero-winner-badge">
-              <i class="ph-fill ph-medal text-warning"></i> Ustadz of The Day (Penyimak)
+          <div class="editorial-highlight-card guru">
+            <div class="editorial-tag">
+              <i class="ph ph-chalkboard-teacher"></i> Ustadz of The Day (Penyimak Teraktif)
             </div>
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center justify-content-between gap-3">
               <div>
-                <h3 class="fw-bold mb-1" id="motgNama">—</h3>
-                <p class="m-0 text-white-50 small">
-                  Total Santri Disimak: <strong class="text-white" id="motgTotalSantri">0 Santri</strong>
-                </p>
-                <div class="mt-2 text-white-50 small">
-                  Mapel Terbanyak: <span class="text-white" id="motgTopMapel">—</span>
+                <h3 class="highlight-name" id="motgNama">—</h3>
+                <div class="highlight-meta">
+                  Santri Disimak: <span class="fw-semibold text-dark" id="motgTotalSantri">0 Santri</span>
+                </div>
+                <div class="highlight-meta mt-1">
+                  Pelajaran Dominan: <span id="motgTopMapel">—</span>
                 </div>
               </div>
               <div class="text-end">
-                <div class="display-6 fw-bold text-warning" id="motgTotal">0</div>
-                <small class="text-white-50 text-uppercase fw-bold" style="font-size:11px;">Materi Disimak</small>
+                <div class="highlight-stat-pill" style="color: #0f766e;" id="motgTotal">0</div>
+                <div class="metric-helper">Materi Disimak</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ================= STATS CARDS ================= -->
+      <!-- ================= METRIC SUMMARY ================= -->
       <div class="row g-3 mb-4">
         <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-muted small fw-bold">TOTAL MATERI</span>
-              <i class="ph-duotone ph-checks fs-4 text-primary"></i>
-            </div>
-            <h3 class="fw-bold m-0 text-primary" id="statMateri">0</h3>
-            <small class="text-muted" style="font-size:11px;">Butir materi disetor</small>
+          <div class="metric-box">
+            <div class="metric-label">Total Butir Materi</div>
+            <div class="metric-value text-dark" id="statMateri">0</div>
+            <div class="metric-helper">Butir materi berhasil disetor</div>
           </div>
         </div>
         <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-muted small fw-bold">SESI SETORAN</span>
-              <i class="ph-duotone ph-receipt fs-4 text-info"></i>
-            </div>
-            <h3 class="fw-bold m-0 text-info" id="statSesi">0</h3>
-            <small class="text-muted" style="font-size:11px;">Transaksi penulisan</small>
+          <div class="metric-box">
+            <div class="metric-label">Sesi Setoran</div>
+            <div class="metric-value" style="color: var(--accent);" id="statSesi">0</div>
+            <div class="metric-helper">Transaksi penulisan sesi</div>
           </div>
         </div>
         <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-muted small fw-bold">SANTRI AKTIF</span>
-              <i class="ph-duotone ph-student fs-4 text-success"></i>
-            </div>
-            <h3 class="fw-bold m-0 text-success" id="statSantri">0</h3>
-            <small class="text-muted" style="font-size:11px;">Santri menyetor</small>
+          <div class="metric-box">
+            <div class="metric-label">Santri Aktif</div>
+            <div class="metric-value text-dark" id="statSantri">0</div>
+            <div class="metric-helper">Santri yang telah menyetor</div>
           </div>
         </div>
         <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-muted small fw-bold">USTADZ BERTUGAS</span>
-              <i class="ph-duotone ph-user-focus fs-4 text-warning"></i>
-            </div>
-            <h3 class="fw-bold m-0 text-warning" id="statGuru">0</h3>
-            <small class="text-muted" style="font-size:11px;">Penyimak aktif</small>
+          <div class="metric-box">
+            <div class="metric-label">Ustadz Penyimak</div>
+            <div class="metric-value text-dark" id="statGuru">0</div>
+            <div class="metric-helper">Pembimbing yang bertugas</div>
           </div>
         </div>
       </div>
 
-      <!-- ================= TAB NAVIGATION ================= -->
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div class="custom-pill-tab" role="tablist">
-          <button class="btn-tab active" data-tab="tabSantri"><i class="ph-bold ph-student"></i> POV Santri</button>
-          <button class="btn-tab" data-tab="tabGuru"><i class="ph-bold ph-chalkboard-teacher"></i> POV Ustadz/Guru</button>
-          <button class="btn-tab" data-tab="tabKelas"><i class="ph-bold ph-users-three"></i> POV Kelas</button>
-          <button class="btn-tab" data-tab="tabMapel"><i class="ph-bold ph-book-bookmark"></i> POV Pelajaran</button>
+      <!-- ================= POV SECTION TABS ================= -->
+      <div class="panel mb-4">
+        <div class="panel-header">
+          <div class="tabs-nav" style="border:none; margin:0;">
+            <button class="tab-item active" data-tab="tabSantri"><i class="ph ph-student"></i> POV Santri</button>
+            <button class="tab-item" data-tab="tabGuru"><i class="ph ph-chalkboard-teacher"></i> POV Ustadz/Guru</button>
+            <button class="tab-item" data-tab="tabKelas"><i class="ph ph-users"></i> POV Kelas</button>
+            <button class="tab-item" data-tab="tabMapel"><i class="ph ph-book-open"></i> POV Pelajaran</button>
+          </div>
+          <div class="text-muted" style="font-size:12px;" id="recordCounter">
+            0 data ditampilkan
+          </div>
         </div>
-        <div class="text-muted small" id="infoPencarian">
-          Menampilkan seluruh data
-        </div>
-      </div>
 
-      <!-- ================= TAB 1: POV SANTRI ================= -->
-      <div id="tabSantri" class="tab-pane-content">
-        <div class="table-custom">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th style="width: 50px;">Rank</th>
-                <th>Santri</th>
-                <th>Kelas</th>
-                <th>Asrama / Daerah</th>
-                <th>Ustadz Penyimak</th>
-                <th class="text-center">Total Materi</th>
-                <th class="text-end">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="bodySantri"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ================= TAB 2: POV GURU / USTADZ ================= -->
-      <div id="tabGuru" class="tab-pane-content" style="display:none;">
-        <div class="table-custom">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th style="width: 50px;">Rank</th>
-                <th>Nama Ustadz</th>
-                <th class="text-center">Total Materi Disimak</th>
-                <th class="text-center">Santri Disimak</th>
-                <th>Mapel Terbanyak</th>
-                <th class="text-end">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="bodyGuru"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ================= TAB 3: POV KELAS ================= -->
-      <div id="tabKelas" class="tab-pane-content" style="display:none;">
-        <div class="row g-4 mb-4">
-          <div class="col-lg-6">
-            <div class="stat-card">
-              <h6 class="fw-bold mb-3"><i class="ph-bold ph-chart-bar text-primary me-2"></i>Perbandingan Materi per Kelas</h6>
-              <div style="height: 280px;">
-                <canvas id="chartKelas"></canvas>
-              </div>
+        <div class="panel-body p-0">
+          
+          <!-- TAB 1: POV SANTRI -->
+          <div id="tabSantri" class="tab-content-panel">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">Rank</th>
+                    <th>Santri</th>
+                    <th>Kelas</th>
+                    <th>Daerah / Asrama</th>
+                    <th>Ustadz Penyimak</th>
+                    <th class="text-center">Total Materi</th>
+                    <th class="text-end">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody id="bodySantri"></tbody>
+              </table>
             </div>
           </div>
-          <div class="col-lg-6">
-            <div class="table-custom">
-              <table class="table align-middle">
+
+          <!-- TAB 2: POV GURU / USTADZ -->
+          <div id="tabGuru" class="tab-content-panel" style="display:none;">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">Rank</th>
+                    <th>Nama Ustadz</th>
+                    <th class="text-center">Total Materi Disimak</th>
+                    <th class="text-center">Jumlah Santri</th>
+                    <th>Pelajaran Terbanyak</th>
+                    <th class="text-end">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody id="bodyGuru"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: POV KELAS -->
+          <div id="tabKelas" class="tab-content-panel" style="display:none;">
+            <div class="p-3 border-bottom" style="height: 250px;">
+              <canvas id="chartKelas"></canvas>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
                 <thead>
                   <tr>
                     <th>Kelas</th>
                     <th class="text-center">Santri Setor</th>
                     <th class="text-center">Total Materi</th>
                     <th class="text-center">Rata-rata / Santri</th>
-                    <th class="text-end">Aksi</th>
+                    <th class="text-end">Tindakan</th>
                   </tr>
                 </thead>
                 <tbody id="bodyKelas"></tbody>
               </table>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- ================= TAB 4: POV PELAJARAN ================= -->
-      <div id="tabMapel" class="tab-pane-content" style="display:none;">
-        <div class="row g-4 mb-4">
-          <div class="col-lg-5">
-            <div class="stat-card">
-              <h6 class="fw-bold mb-3"><i class="ph-bold ph-chart-pie-slice text-primary me-2"></i>Porsi Mata Pelajaran</h6>
-              <div style="height: 280px;">
-                <canvas id="chartMapel"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-7">
-            <div class="table-custom">
-              <table class="table align-middle">
+          <!-- TAB 4: POV PELAJARAN -->
+          <div id="tabMapel" class="tab-content-panel" style="display:none;">
+            <div class="table-container">
+              <table class="data-table">
                 <thead>
                   <tr>
                     <th>Mata Pelajaran</th>
                     <th class="text-center">Total Materi</th>
                     <th class="text-center">Santri Setor</th>
                     <th>Jenis Kegiatan Terbanyak</th>
-                    <th class="text-end">Aksi</th>
+                    <th class="text-end">Tindakan</th>
                   </tr>
                 </thead>
                 <tbody id="bodyMapel"></tbody>
               </table>
             </div>
           </div>
+
         </div>
       </div>
 
     </div>
-  </div>
+  </main>
 
-  <!-- ================= MODAL DETAIL DRILLDOWN ================= -->
+  <!-- ================= MODAL DRILLDOWN ================= -->
   <div class="modal fade" id="modalDrilldown" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content" style="border-radius: var(--radius); border: 1px solid var(--border);">
-        <div class="modal-header border-0 pb-0">
+      <div class="modal-content" style="border-radius: var(--radius-md); border: 1px solid var(--border);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 14px 18px;">
           <div>
-            <h5 class="modal-title fw-bold" id="modalDrilldownTitle">Rincian Data</h5>
+            <h5 class="modal-title fw-bold" style="font-size: 15px;" id="modalDrilldownTitle">Rincian Data</h5>
             <small class="text-muted" id="modalDrilldownSubtitle">—</small>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body p-4">
-          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-            <table class="table table-sm align-middle">
+        <div class="modal-body p-0">
+          <div class="table-container" style="max-height: 420px; overflow-y: auto;">
+            <table class="data-table">
               <thead>
-                <tr class="text-muted small">
+                <tr>
                   <th>Tanggal</th>
                   <th>Santri</th>
                   <th>Kelas</th>
@@ -551,14 +846,14 @@
             </table>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+        <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 10px 18px;">
+          <button type="button" class="btn-action btn-secondary-action" data-bs-dismiss="modal">Tutup</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- FIREBASE SCRIPTS -->
+  <!-- SCRIPT FIREBASE LOGIC -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
@@ -583,50 +878,53 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // State Data
+    // State
     let rawSetoranList = [];
     let flattenedRecords = [];
     let chartKelasInstance = null;
-    let chartMapelInstance = null;
 
-    // Cache Session Storage Key
-    const CACHE_ANALYTICS_KEY = "muwajah_analytics_cache";
-    const CACHE_ANALYTICS_TIME = "muwajah_analytics_time";
+    const CACHE_KEY = "muwajah_analisis_cache";
+    const CACHE_TIME = "muwajah_analisis_time";
 
-    // Format Tanggal Hari Ini: YYYY-MM-DD
     function getTodayString() {
       const d = new Date();
       return d.toISOString().split("T")[0];
     }
 
-    // Load Data Setoran dari Firebase dengan Optimasi Kuota
-    async function loadData(force = false) {
-      document.getElementById("loadingArea").style.display = "block";
-      document.getElementById("contentArea").style.display = "none";
+    // Load data dengan perlindungan kuota (Smart Session Cache)
+    window.loadData = async function loadData(force = false) {
+      document.getElementById("loadingState").style.display = "block";
+      document.getElementById("contentWrapper").style.display = "none";
+      document.getElementById("errorState").style.display = "none";
+
       const iconRef = document.getElementById("iconRefresh");
       if (iconRef) iconRef.classList.add("ph-spin");
 
       const range = document.getElementById("filterWaktu").value;
-      const cacheKeyWithRange = `${CACHE_ANALYTICS_KEY}_${range}`;
-      const cacheTimeKey = `${CACHE_ANALYTICS_TIME}_${range}`;
+      const cacheRangeKey = `${CACHE_KEY}_${range}`;
+      const cacheTimeKey = `${CACHE_TIME}_${range}`;
 
-      // Cek Cache Lokal 10 Menit jika bukan force
-      const cached = sessionStorage.getItem(cacheKeyWithRange);
+      // Cek Session Cache 10 menit
+      const cached = sessionStorage.getItem(cacheRangeKey);
       const cachedTime = sessionStorage.getItem(cacheTimeKey);
       if (!force && cached && cachedTime && (Date.now() - parseInt(cachedTime) < 600000)) {
-        rawSetoranList = JSON.parse(cached);
-        processAndRender();
-        if (iconRef) iconRef.classList.remove("ph-spin");
-        return;
+        try {
+          rawSetoranList = JSON.parse(cached);
+          processAndRender();
+          if (iconRef) iconRef.classList.remove("ph-spin");
+          return;
+        } catch(e) {
+          sessionStorage.removeItem(cacheRangeKey);
+        }
       }
 
       try {
-        let q;
         const setoranCol = collection(db, "setoran");
+        let q;
 
         if (range === "today") {
+          // Default: coba via tanggal_hari
           const today = getTodayString();
-          // Coba query berdasarkan tanggal_hari jika ada, fallback ke rentang ISO
           q = query(setoranCol, where("tanggal_hari", "==", today));
         } else if (range === "7days") {
           const d = new Date();
@@ -637,13 +935,13 @@
           d.setDate(d.getDate() - 30);
           q = query(setoranCol, where("tanggal", ">=", d.toISOString()));
         } else {
-          // Semua data
-          q = query(setoranCol, orderBy("tanggal", "desc"), limit(2000));
+          // Semua data (limit 1500)
+          q = query(setoranCol, orderBy("tanggal", "desc"), limit(1500));
         }
 
         let snapshot = await getDocs(q);
 
-        // Fallback jika range today 0 data via tanggal_hari (karena data lama belum ada field tanggal_hari)
+        // Fallback untuk today jika snapshot tanggal_hari kosong (misal dokumen lama belum ada field tanggal_hari)
         if (range === "today" && snapshot.empty) {
           const startOfToday = new Date();
           startOfToday.setHours(0, 0, 0, 0);
@@ -652,71 +950,75 @@
         }
 
         rawSetoranList = [];
-        snapshot.forEach((doc) => {
-          rawSetoranList.push({ id: doc.id, ...doc.data() });
+        snapshot.forEach(docSnap => {
+          rawSetoranList.push({ id: docSnap.id, ...docSnap.data() });
         });
 
         // Simpan ke Cache Session
-        sessionStorage.setItem(cacheKeyWithRange, JSON.stringify(rawSetoranList));
+        sessionStorage.setItem(cacheRangeKey, JSON.stringify(rawSetoranList));
         sessionStorage.setItem(cacheTimeKey, Date.now().toString());
 
         processAndRender();
       } catch (err) {
-        alert("Gagal memuat data analitik: " + err.message);
-        console.error(err);
+        console.error("Gagal memuat data:", err);
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("errorState").style.display = "block";
+        document.getElementById("errorMessage").innerText = err.message || "Periksa koneksi internet Anda.";
       } finally {
         if (iconRef) iconRef.classList.remove("ph-spin");
       }
-    }
+    };
 
-    // Ekstrak & Flatten Data (Mendukung Dokumen Sesi & Format Lama)
     function processAndRender() {
-      flattenedRecords = [];
+      try {
+        flattenedRecords = [];
 
-      rawSetoranList.forEach(docItem => {
-        // Jika dokumen sesi (materi_list)
-        if (Array.isArray(docItem.materi_list) && docItem.materi_list.length > 0) {
-          docItem.materi_list.forEach(m => {
-            flattenedRecords.push({
-              doc_id: docItem.id,
-              stambuk: docItem.stambuk || "",
-              nama: docItem.nama || "",
-              kelas: docItem.kelas || "",
-              daerah: docItem.daerah || "",
-              ustadz: docItem.ustadz || "",
-              pelajaran: docItem.pelajaran || "",
-              jenis: docItem.jenis || "",
-              semester: docItem.semester || 2,
-              tanggal: docItem.tanggal || "",
-              materi_judul: m.judul || m.id || "—"
+        rawSetoranList.forEach(item => {
+          // Mode Super Hemat (1 dokumen = array materi_list)
+          if (Array.isArray(item.materi_list) && item.materi_list.length > 0) {
+            item.materi_list.forEach(m => {
+              flattenedRecords.push({
+                doc_id: item.id,
+                stambuk: item.stambuk || "",
+                nama: item.nama || "",
+                kelas: item.kelas || "",
+                daerah: item.daerah || "",
+                ustadz: item.ustadz || "",
+                pelajaran: item.pelajaran || "",
+                jenis: item.jenis || "",
+                semester: item.semester || 2,
+                tanggal: item.tanggal || "",
+                materi_judul: m.judul || m.id || "—"
+              });
             });
-          });
-        } else {
-          // Format lama (1 materi per dokumen)
-          flattenedRecords.push({
-            doc_id: docItem.id,
-            stambuk: docItem.stambuk || "",
-            nama: docItem.nama || "",
-            kelas: docItem.kelas || "",
-            daerah: docItem.daerah || "",
-            ustadz: docItem.ustadz || "",
-            pelajaran: docItem.pelajaran || "",
-            jenis: docItem.jenis || "",
-            semester: docItem.semester || 2,
-            tanggal: docItem.tanggal || "",
-            materi_judul: docItem.judul || "—"
-          });
-        }
-      });
+          } else {
+            // Format dokumen lama
+            flattenedRecords.push({
+              doc_id: item.id,
+              stambuk: item.stambuk || "",
+              nama: item.nama || "",
+              kelas: item.kelas || "",
+              daerah: item.daerah || "",
+              ustadz: item.ustadz || "",
+              pelajaran: item.pelajaran || "",
+              jenis: item.jenis || "",
+              semester: item.semester || 2,
+              tanggal: item.tanggal || "",
+              materi_judul: item.judul || "—"
+            });
+          }
+        });
 
-      populateKelasFilter();
-      applyFiltersAndCalculate();
-
-      document.getElementById("loadingArea").style.display = "none";
-      document.getElementById("contentArea").style.display = "block";
+        populateKelasFilter();
+        applyFiltersAndCalculate();
+      } catch (err) {
+        console.error("Error saat kalkulasi data:", err);
+      } finally {
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("contentWrapper").style.display = "block";
+      }
     }
 
-    // Populate Dropdown Kelas
     function populateKelasFilter() {
       const kelasSet = new Set(flattenedRecords.map(r => r.kelas).filter(Boolean));
       const sel = document.getElementById("filterKelas");
@@ -730,7 +1032,6 @@
       }
     }
 
-    // Terapkan Filter & Hitung Metrik Analitik
     function applyFiltersAndCalculate() {
       const semFilter = document.getElementById("filterSemester").value;
       const kelasFilter = document.getElementById("filterKelas").value;
@@ -749,19 +1050,23 @@
         return true;
       });
 
-      // Update Quick Stats
+      document.getElementById("recordCounter").innerText = `${filtered.length} materi disetor`;
+
+      const emptyNotice = document.getElementById("emptyNotice");
+      if (emptyNotice) {
+        emptyNotice.style.display = (flattenedRecords.length === 0) ? "flex" : "none";
+      }
+
+      // Metrik Utama
       document.getElementById("statMateri").innerText = filtered.length.toLocaleString("id-ID");
-      
       const uniqueDocs = new Set(filtered.map(r => r.doc_id)).size;
       document.getElementById("statSesi").innerText = uniqueDocs.toLocaleString("id-ID");
-
       const uniqueSantri = new Set(filtered.map(r => r.stambuk || r.nama)).size;
       document.getElementById("statSantri").innerText = uniqueSantri.toLocaleString("id-ID");
-
       const uniqueGuru = new Set(filtered.map(r => r.ustadz).filter(Boolean)).size;
       document.getElementById("statGuru").innerText = uniqueGuru.toLocaleString("id-ID");
 
-      // Hitung Man of the Day (Santri Terbanyak)
+      // Man of the Day (Santri Terbanyak)
       const santriMap = {};
       filtered.forEach(r => {
         const key = r.stambuk || r.nama;
@@ -798,7 +1103,7 @@
         document.getElementById("motdUstadz").innerText = "—";
       }
 
-      // Hitung Ustadz of the Day (Guru Teraktif)
+      // Ustadz of the Day
       const guruMap = {};
       filtered.forEach(r => {
         const u = r.ustadz || "Lainnya";
@@ -832,10 +1137,9 @@
         document.getElementById("motgTopMapel").innerText = "—";
       }
 
-      // Render Tables
       renderTableSantri(sortedSantri);
       renderTableGuru(sortedGuru);
-      renderPOV эффективноKelas(filtered);
+      renderPOVKelas(filtered);
       renderPOVMapel(filtered);
     }
 
@@ -850,21 +1154,20 @@
 
       list.forEach((s, idx) => {
         const topUstadz = Object.entries(s.ustadzMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
-        const rankBadge = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
         tbody.innerHTML += `
           <tr>
-            <td class="fw-bold">${rankBadge}</td>
+            <td class="text-muted fw-semibold">#${idx + 1}</td>
             <td>
-              <div class="fw-bold">${s.nama}</div>
-              <small class="text-muted">${s.stambuk}</small>
+              <div class="fw-semibold text-dark">${s.nama}</div>
+              <small class="text-muted" style="font-size:11px;">${s.stambuk}</small>
             </td>
-            <td><span class="badge bg-light text-dark border">${s.kelas}</span></td>
+            <td><span class="badge-subtle">${s.kelas}</span></td>
             <td>${s.daerah || "—"}</td>
             <td>${topUstadz}</td>
-            <td class="text-center"><span class="badge bg-primary fs-6 px-3 py-1">${s.count}</span></td>
+            <td class="text-center"><span class="badge-subtle badge-accent fw-bold">${s.count}</span></td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 btn-detail-santri" data-key="${encodeURIComponent(s.stambuk || s.nama)}">
-                <i class="ph-bold ph-list-magnifying-glass me-1"></i> Rincian
+              <button class="btn-action btn-secondary-action btn-detail-santri" style="padding:4px 8px; font-size:12px;" data-key="${encodeURIComponent(s.stambuk || s.nama)}">
+                Rincian
               </button>
             </td>
           </tr>
@@ -875,7 +1178,7 @@
         btn.addEventListener("click", () => {
           const key = decodeURIComponent(btn.dataset.key);
           const found = list.find(x => (x.stambuk || x.nama) === key);
-          if (found) showDrilldownModal(`Rincian Santri: ${found.nama} (${found.kelas})`, `${found.count} Materi Disetor`, found.items);
+          if (found) showDrilldownModal(`Rincian: ${found.nama} (${found.kelas})`, `${found.count} Materi Disetor`, found.items);
         });
       });
     }
@@ -885,23 +1188,22 @@
       const tbody = document.getElementById("bodyGuru");
       tbody.innerHTML = "";
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data guru/penyimak</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data ustadz</td></tr>`;
         return;
       }
 
       list.forEach((g, idx) => {
         const topM = Object.entries(g.mapelMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
-        const rankBadge = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
         tbody.innerHTML += `
           <tr>
-            <td class="fw-bold">${rankBadge}</td>
-            <td class="fw-bold">${g.nama}</td>
-            <td class="text-center"><span class="badge bg-success fs-6 px-3 py-1">${g.count}</span></td>
-            <td class="text-center fw-semibold">${g.santriSet.size} Santri</td>
+            <td class="text-muted fw-semibold">#${idx + 1}</td>
+            <td class="fw-semibold text-dark">${g.nama}</td>
+            <td class="text-center"><span class="badge-subtle badge-success fw-bold">${g.count}</span></td>
+            <td class="text-center text-muted">${g.santriSet.size} Santri</td>
             <td>${topM}</td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 btn-detail-guru" data-key="${encodeURIComponent(g.nama)}">
-                <i class="ph-bold ph-users me-1"></i> Lihat Santri
+              <button class="btn-action btn-secondary-action btn-detail-guru" style="padding:4px 8px; font-size:12px;" data-key="${encodeURIComponent(g.nama)}">
+                Lihat Santri
               </button>
             </td>
           </tr>
@@ -917,8 +1219,8 @@
       });
     }
 
-    // Render POV Kelas & Chart
-    function renderPOV эффективноKelas(filtered) {
+    // Render POV Kelas
+    function renderPOVKelas(filtered) {
       const kelasMap = {};
       filtered.forEach(r => {
         const k = r.kelas || "Tanpa Kelas";
@@ -943,12 +1245,12 @@
         const avg = k.santriSet.size > 0 ? (k.count / k.santriSet.size).toFixed(1) : "0";
         tbody.innerHTML += `
           <tr>
-            <td class="fw-bold">${k.kelas}</td>
+            <td class="fw-semibold text-dark">${k.kelas}</td>
             <td class="text-center">${k.santriSet.size}</td>
-            <td class="text-center fw-bold text-primary">${k.count}</td>
+            <td class="text-center fw-bold" style="color:var(--accent);">${k.count}</td>
             <td class="text-center text-muted">${avg}</td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 btn-detail-kelas" data-key="${encodeURIComponent(k.kelas)}">
+              <button class="btn-action btn-secondary-action btn-detail-kelas" style="padding:4px 8px; font-size:12px;" data-key="${encodeURIComponent(k.kelas)}">
                 Rincian
               </button>
             </td>
@@ -960,33 +1262,46 @@
         btn.addEventListener("click", () => {
           const key = decodeURIComponent(btn.dataset.key);
           const found = sorted.find(x => x.kelas === key);
-          if (found) showDrilldownModal(`Rincian Kelas: ${found.kelas}`, `Total ${found.count} Materi Disetor dari ${found.santriSet.size} Santri`, found.items);
+          if (found) showDrilldownModal(`Kelas: ${found.kelas}`, `${found.count} Materi Disetor dari ${found.santriSet.size} Santri`, found.items);
         });
       });
 
-      // Chart Kelas
-      const ctx = document.getElementById("chartKelas").getContext("2d");
-      if (chartKelasInstance) chartKelasInstance.destroy();
-      chartKelasInstance = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: sorted.map(x => x.kelas),
-          datasets: [{
-            label: "Total Materi",
-            data: sorted.map(x => x.count),
-            backgroundColor: "#4338ca",
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } }
+      // Chart Bar (Aman dari kegagalan canvas)
+      try {
+        const canvasEl = document.getElementById("chartKelas");
+        if (canvasEl && typeof Chart !== "undefined") {
+          const ctx = canvasEl.getContext("2d");
+          if (chartKelasInstance) chartKelasInstance.destroy();
+          chartKelasInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: sorted.map(x => x.kelas),
+              datasets: [{
+                label: "Total Materi",
+                data: sorted.map(x => x.count),
+                backgroundColor: "#1e293b",
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: { grid: { color: "#f1f5f9" } },
+                x: { grid: { display: false } }
+              }
+            }
+          });
         }
-      });
+      } catch (chartErr) {
+        console.warn("Chart rendering skipped:", chartErr);
+      }
     }
 
-    // Render POV Mapel & Chart
+    // Render POV Mapel
     function renderPOVMapel(filtered) {
       const mapelMap = {};
       filtered.forEach(r => {
@@ -1014,12 +1329,12 @@
         const topJ = Object.entries(m.jenisMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
         tbody.innerHTML += `
           <tr>
-            <td class="fw-bold">${m.pelajaran}</td>
-            <td class="text-center fw-bold text-success">${m.count}</td>
-            <td class="text-center">${m.santriSet.size}</td>
-            <td><span class="badge bg-light text-dark border">${topJ}</span></td>
+            <td class="fw-semibold text-dark">${m.pelajaran}</td>
+            <td class="text-center fw-bold">${m.count}</td>
+            <td class="text-center text-muted">${m.santriSet.size}</td>
+            <td><span class="badge-subtle">${topJ}</span></td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 btn-detail-mapel" data-key="${encodeURIComponent(m.pelajaran)}">
+              <button class="btn-action btn-secondary-action btn-detail-mapel" style="padding:4px 8px; font-size:12px;" data-key="${encodeURIComponent(m.pelajaran)}">
                 Rincian
               </button>
             </td>
@@ -1031,31 +1346,12 @@
         btn.addEventListener("click", () => {
           const key = decodeURIComponent(btn.dataset.key);
           const found = sorted.find(x => x.pelajaran === key);
-          if (found) showDrilldownModal(`Mata Pelajaran: ${found.pelajaran}`, `${found.count} Materi Disetor (${found.santriSet.size} Santri)`, found.items);
+          if (found) showDrilldownModal(`Pelajaran: ${found.pelajaran}`, `${found.count} Materi Disetor (${found.santriSet.size} Santri)`, found.items);
         });
-      });
-
-      // Chart Mapel
-      const ctx = document.getElementById("chartMapel").getContext("2d");
-      if (chartMapelInstance) chartMapelInstance.destroy();
-      chartMapelInstance = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: sorted.slice(0, 7).map(x => x.pelajaran),
-          datasets: [{
-            data: sorted.slice(0, 7).map(x => x.count),
-            backgroundColor: ["#4338ca", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#64748b"]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "right" } }
-        }
       });
     }
 
-    // Modal Drilldown Detail
+    // Modal Drilldown
     function showDrilldownModal(title, subtitle, items) {
       document.getElementById("modalDrilldownTitle").innerText = title;
       document.getElementById("modalDrilldownSubtitle").innerText = subtitle;
@@ -1073,12 +1369,12 @@
 
         tbody.innerHTML += `
           <tr>
-            <td class="text-muted small" style="white-space:nowrap;">${dateStr}</td>
-            <td class="fw-bold">${item.nama}</td>
-            <td><span class="badge bg-light text-dark border">${item.kelas}</span></td>
+            <td class="text-muted" style="white-space:nowrap; font-size:11.5px;">${dateStr}</td>
+            <td class="fw-semibold">${item.nama}</td>
+            <td><span class="badge-subtle">${item.kelas}</span></td>
             <td>${item.pelajaran}</td>
             <td>
-              <span class="badge bg-light text-primary border me-1" style="font-size:10px;">${item.jenis}</span>
+              <span class="badge-subtle badge-accent me-1" style="font-size:10px;">${item.jenis}</span>
               ${item.materi_judul}
             </td>
             <td class="text-muted">${item.ustadz}</td>
@@ -1089,7 +1385,7 @@
       new bootstrap.Modal(document.getElementById("modalDrilldown")).show();
     }
 
-    // ================= EXPORT EXCEL DUA SHEET =================
+    // Export Excel Rapi Multi-Sheet
     function exportToExcel() {
       if (flattenedRecords.length === 0) {
         alert("Belum ada data untuk diekspor!");
@@ -1149,32 +1445,34 @@
       const wsSummary = XLSX.utils.json_to_sheet(summaryData);
       XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan Analisis");
 
-      // Generate File Name
-      const tglFile = getTodayString();
-      XLSX.writeFile(wb, `Analisis_Setoran_Muwajah_${tglFile}.xlsx`);
+      XLSX.writeFile(wb, `Analisis_Setoran_Muwajah_${getTodayString()}.xlsx`);
     }
 
-    // Event Listeners
+    // Listeners
     document.getElementById("btnExportExcel").addEventListener("click", exportToExcel);
-    document.getElementById("btnRefresh").addEventListener("click", () => loadData(true));
-    document.getElementById("filterWaktu").addEventListener("change", () => loadData(true));
+    document.getElementById("btnRefresh").addEventListener("click", () => window.loadData(true));
+    document.getElementById("filterWaktu").addEventListener("change", () => window.loadData(true));
     document.getElementById("filterSemester").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterKelas").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterSearch").addEventListener("input", applyFiltersAndCalculate);
 
-    // Tab Buttons
-    document.querySelectorAll(".btn-tab").forEach(tab => {
+    // Tab Navigation
+    document.querySelectorAll(".tab-item").forEach(tab => {
       tab.addEventListener("click", () => {
-        document.querySelectorAll(".btn-tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         const target = tab.dataset.tab;
-        document.querySelectorAll(".tab-pane-content").forEach(p => p.style.display = "none");
-        document.getElementById(target).style.display = "block";
+        document.querySelectorAll(".tab-content-panel").forEach(p => p.style.display = "none");
+        const targetEl = document.getElementById(target);
+        if (targetEl) targetEl.style.display = "block";
+        if (target === "tabKelas" && chartKelasInstance) {
+          setTimeout(() => chartKelasInstance.resize(), 60);
+        }
       });
     });
 
     // Inisialisasi
-    loadData();
+    window.loadData();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

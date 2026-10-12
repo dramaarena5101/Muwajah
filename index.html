@@ -1152,7 +1152,9 @@
           <p class="app-subtitle">Sistem Pantauan Pembelajaran Santri Terpadu</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <a href="analisis.html" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size:12px;" title="Buka Halaman Analisis & Rekapitulasi">
+          <a href="analisis.html"
+            class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-bold shadow-sm"
+            style="font-size:12px;" title="Buka Halaman Analisis & Rekapitulasi">
             <i class="ph-bold ph-chart-line-up fs-6"></i> Analisis & Rekap
           </a>
           <button class="btn-theme" title="Dashboard Wali Kelas" onclick="showDashboardPinModal()"
@@ -1253,7 +1255,8 @@
           <div class="col-md-4">
             <label class="form-label d-flex justify-content-between align-items-center">
               <span>Semester</span>
-              <span id="badgeSemesterSync" class="badge bg-light text-primary border" style="font-size:10px;">Cloud Sync</span>
+              <span id="badgeSemesterSync" class="badge bg-light text-primary border" style="font-size:10px;">Cloud
+                Sync</span>
             </label>
             <select id="filterSemester" class="form-select fw-bold">
               <option value="2" selected>Semester 2 (Aktif)</option>
@@ -1859,7 +1862,7 @@
       }
 
       pelajaranSel.innerHTML = `<option value="">— Pilih Mata Pelajaran —</option>`;
-      
+
       let matchCount = 0;
       sortedKeys.forEach(p => {
         const allItems = pelajaranData[p] || [];
