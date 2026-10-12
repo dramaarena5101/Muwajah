@@ -950,6 +950,17 @@
           
           <!-- TAB 1: POV SANTRI -->
           <div id="tabSantri" class="tab-content-panel">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted text-uppercase fw-semibold" style="font-size:10.5px; letter-spacing:0.04em;">Status Setoran:</span>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-secondary btn-sm active py-1 px-2 btn-filter-santri" data-status="all" style="font-size:11.5px;">Semua Santri (<span id="countSantriTotal">0</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-santri" data-status="sudah" style="font-size:11.5px;">Sudah Setor (<span id="countSantriSudah">0</span>)</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 btn-filter-santri" data-status="belum" style="font-size:11.5px;">Belum Setor (<span id="countSantriBelum">0</span>)</button>
+                </div>
+              </div>
+              <small class="text-muted" id="statSantriSummary" style="font-size:11px;">Monitoring absensi & setoran santri</small>
+            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
@@ -965,6 +976,20 @@
                 </thead>
                 <tbody id="bodySantri"></tbody>
               </table>
+            </div>
+
+            <!-- Pagination Controls (Max 25 Per Halaman) -->
+            <div id="paginationSantriWrapper" class="d-flex justify-content-between align-items-center px-3 py-2 border-top bg-light flex-wrap gap-2" style="font-size: 12px;">
+              <span class="text-muted" id="paginationSantriInfo">Menampilkan 0 - 0 dari 0 santri</span>
+              <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" id="btnSantriPrev" style="font-size: 11.5px;" disabled>
+                  <i class="ph ph-caret-left"></i> Sebelumnya
+                </button>
+                <span class="badge-subtle px-2 py-1 fw-semibold text-dark" id="paginationSantriPage" style="font-size: 11.5px;">Hal 1 / 1</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" id="btnSantriNext" style="font-size: 11.5px;" disabled>
+                  Berikutnya <i class="ph ph-caret-right"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1154,6 +1179,22 @@
     // Master Constants
     const MASTER_KELAS = ["5B", "5C", "5D", "5E", "5F", "5G", "5H", "5I", "5J", "5K", "5L", "5M", "5N", "5O", "5P", "5Q", "5R", "5S"];
     const MASTER_KEGIATAN = ["Menghafal", "Merangkum", "Menggaris", "Menanyakan", "Latihan", "Mengajar"];
+    
+    // Pemetaan Label Kegiatan sesuai Form Muwajah
+    const KEGIATAN_LABEL_MAP = {
+      "Menghafal": "Menghafal (Tahfizh)",
+      "Merangkum": "Merangkum (Takhlish)",
+      "Menggaris": "Menggaris Bawahi (Tasthir)",
+      "Menanyakan": "Meminta Penjelasan (Bayan)",
+      "Latihan": "Latihan Soal (Tatbiq)",
+      "Mengajar": "Mengajar Orang Lain (Ta'lim)"
+    };
+
+    function formatNamaKegiatan(val) {
+      if (!val) return "—";
+      return KEGIATAN_LABEL_MAP[val] || val;
+    }
+
     const DEFAULT_PELAJARAN_LIST = [
       "Muthalaah", "Nahwu", "Sharaf", "Balaghah", "Tarikh Adab", "Al-Qur'an",
       "Tarjamah", "Tafsir", "Hadits", "Musthalah", "Ushul Fiqih", "Tauhid",
@@ -1164,22 +1205,34 @@
 
     let masterPelajaranList = [...DEFAULT_PELAJARAN_LIST];
     let masterPembimbingList = [];
+    let masterSantriList = [];
+    let masterSantriPerKelas = {};
 
     // Sub-filter & Sorting state
     let sortKelasMode = "abjad"; // "abjad" | "count"
     let filterMapelStatus = "all"; // "all" | "active" | "zero"
     let filterGuruStatus = "all"; // "all" | "active" | "zero"
+    let filterSantriStatus = "all"; // "all" | "sudah" | "belum"
     let latestFilteredRecords = [];
 
     // State
     let rawSetoranList = [];
     let flattenedRecords = [];
     
-    // Leaderboard State
+    // Leaderboard State & Processed Santri State
     let limitSantri = 5;
     let limitGuru = 5;
     let cachedSortedSantri = [];
     let cachedSortedGuru = [];
+    let allProcessedSantri = {
+      rankedSudah: [],
+      listBelum: [],
+      combined: []
+    };
+
+    // Pagination State (POV Santri Max 25 Per Halaman)
+    const PAGE_SIZE_SANTRI = 25;
+    let currentPageSantri = 1;
 
     // Chart.js Instances
     let chartKelasInstance = null;
@@ -1234,6 +1287,69 @@
             masterPelajaranList = Array.from(new Set([...DEFAULT_PELAJARAN_LIST, ...keys])).sort();
           }
         } catch(e) {}
+      }
+    }
+
+    // Indexing Master Santri per Kelas
+    function indexMasterSantri() {
+      masterSantriPerKelas = {};
+      MASTER_KELAS.forEach(k => masterSantriPerKelas[k] = []);
+      masterSantriList.forEach(s => {
+        const k = normalizeKelas(s.kelas);
+        if (!masterSantriPerKelas[k]) masterSantriPerKelas[k] = [];
+        masterSantriPerKelas[k].push(s);
+      });
+    }
+
+    // Muat Master Data Santri (1 Dokumen Per Kelas = Hanya 18 Reads Total!)
+    async function muatMasterSantri() {
+      const cached = localStorage.getItem("muwajah_santri_master_cache");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            masterSantriList = parsed;
+            indexMasterSantri();
+            return;
+          }
+        } catch(e) {}
+      }
+
+      try {
+        const querySnap = await getDocs(collection(db, "santri_master"));
+        masterSantriList = [];
+
+        querySnap.forEach(docSnap => {
+          const d = docSnap.data();
+          if (Array.isArray(d.santri)) {
+            d.santri.forEach(s => {
+              masterSantriList.push({
+                id: s.stambuk || `${d.kelas}_${s.nama}`,
+                abs: s.abs || "",
+                stambuk: s.stambuk || "",
+                nama: s.nama || "",
+                kelas: normalizeKelas(s.kelas || d.kelas),
+                daerah: s.daerah || ""
+              });
+            });
+          } else {
+            masterSantriList.push({
+              id: docSnap.id,
+              abs: d.abs || "",
+              stambuk: d.stambuk || "",
+              nama: d.nama || "",
+              kelas: normalizeKelas(d.kelas),
+              daerah: d.daerah || ""
+            });
+          }
+        });
+
+        if (masterSantriList.length > 0) {
+          localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
+        }
+        indexMasterSantri();
+      } catch (err) {
+        console.warn("Gagal memuat master santri dari Firestore:", err);
       }
     }
 
@@ -1310,10 +1426,13 @@
       const iconRef = document.getElementById("iconRefresh");
       if (iconRef) iconRef.classList.add("ph-spin");
 
-      // Pastikan master pembimbing & pelajaran termuat
+      // Pastikan master pembimbing, pelajaran, dan santri termuat
       muatMasterPelajaran();
       if (masterPembimbingList.length === 0) {
         await muatMasterPembimbing();
+      }
+      if (masterSantriList.length === 0) {
+        await muatMasterSantri();
       }
 
       const range = document.getElementById("filterWaktu").value;
@@ -1494,16 +1613,16 @@
       const uniqueSantri = new Set(filtered.map(r => r.stambuk || r.nama)).size;
       document.getElementById("statSantri").innerText = uniqueSantri.toLocaleString("id-ID");
 
-      // 1. Rekap Santri & Leaderboard (Hitung Rank dengan Ties)
+      // 1. Rekap Santri & Leaderboard (Hitung Rank dengan Ties & Status Setor)
       const santriMap = {};
       filtered.forEach(r => {
-        const key = r.stambuk || r.nama;
+        const key = r.stambuk ? `stb_${r.stambuk.trim()}` : `nm_${(r.nama || '').trim().toLowerCase()}`;
         if (!santriMap[key]) {
           santriMap[key] = {
-            stambuk: r.stambuk,
-            nama: r.nama,
-            kelas: r.kelas,
-            daerah: r.daerah,
+            stambuk: r.stambuk || "",
+            nama: r.nama || "",
+            kelas: normalizeKelas(r.kelas) || r.kelas || "",
+            daerah: r.daerah || "",
             count: 0,
             ustadzMap: {},
             mapelMap: {},
@@ -1511,14 +1630,130 @@
           };
         }
         santriMap[key].count++;
-        santriMap[key].ustadzMap[r.ustadz] = (santriMap[key].ustadzMap[r.ustadz] || 0) + 1;
-        santriMap[key].mapelMap[r.pelajaran] = (santriMap[key].mapelMap[r.pelajaran] || 0) + 1;
+        if (r.ustadz) santriMap[key].ustadzMap[r.ustadz] = (santriMap[key].ustadzMap[r.ustadz] || 0) + 1;
+        if (r.pelajaran) santriMap[key].mapelMap[r.pelajaran] = (santriMap[key].mapelMap[r.pelajaran] || 0) + 1;
         santriMap[key].items.push(r);
       });
-      const rawSortedSantri = Object.values(santriMap).sort((a, b) => b.count - a.count);
-      cachedSortedSantri = calculateRankings(rawSortedSantri, "count");
+
+      // Gabungkan dengan Master Santri (untuk melihat siapa yang belum setor)
+      let targetMaster = masterSantriList;
+      if (kelasFilter !== "all") {
+        targetMaster = targetMaster.filter(s => normalizeKelas(s.kelas) === kelasFilter);
+      }
+      if (search) {
+        targetMaster = targetMaster.filter(s => 
+          (s.nama || "").toLowerCase().includes(search) ||
+          (s.stambuk || "").toLowerCase().includes(search) ||
+          (s.daerah || "").toLowerCase().includes(search)
+        );
+      }
+
+      const combinedList = [];
+      const matchedSetorKeys = new Set();
+
+      targetMaster.forEach(m => {
+        let foundKey = null;
+        if (m.stambuk && santriMap[`stb_${m.stambuk.trim()}`]) {
+          foundKey = `stb_${m.stambuk.trim()}`;
+        } else if (m.nama && santriMap[`nm_${m.nama.trim().toLowerCase()}`]) {
+          foundKey = `nm_${m.nama.trim().toLowerCase()}`;
+        }
+
+        if (foundKey) {
+          matchedSetorKeys.add(foundKey);
+          const setorData = santriMap[foundKey];
+          combinedList.push({
+            abs: m.abs || "",
+            stambuk: m.stambuk || setorData.stambuk,
+            nama: m.nama || setorData.nama,
+            kelas: normalizeKelas(m.kelas || setorData.kelas),
+            daerah: m.daerah || setorData.daerah,
+            count: setorData.count,
+            ustadzMap: setorData.ustadzMap,
+            mapelMap: setorData.mapelMap,
+            items: setorData.items,
+            status: "sudah"
+          });
+        } else {
+          combinedList.push({
+            abs: m.abs || "",
+            stambuk: m.stambuk || "",
+            nama: m.nama || "",
+            kelas: normalizeKelas(m.kelas),
+            daerah: m.daerah || "",
+            count: 0,
+            ustadzMap: {},
+            mapelMap: {},
+            items: [],
+            status: "belum"
+          });
+        }
+      });
+
+      // Tambahkan santri transaksi yang belum tercatat di master list
+      Object.keys(santriMap).forEach(k => {
+        if (!matchedSetorKeys.has(k)) {
+          const s = santriMap[k];
+          if (kelasFilter !== "all" && normalizeKelas(s.kelas) !== kelasFilter) return;
+          if (search) {
+            const mN = (s.nama || "").toLowerCase().includes(search);
+            const mS = (s.stambuk || "").toLowerCase().includes(search);
+            if (!mN && !mS) return;
+          }
+          combinedList.push({
+            abs: "",
+            stambuk: s.stambuk,
+            nama: s.nama,
+            kelas: normalizeKelas(s.kelas),
+            daerah: s.daerah,
+            count: s.count,
+            ustadzMap: s.ustadzMap,
+            mapelMap: s.mapelMap,
+            items: s.items,
+            status: "sudah"
+          });
+        }
+      });
+
+      const listSudah = combinedList.filter(x => x.status === "sudah").sort((a, b) => b.count - a.count);
+      const listBelum = combinedList.filter(x => x.status === "belum").sort((a, b) => {
+        if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+        const absA = parseInt(a.abs) || 999;
+        const absB = parseInt(b.abs) || 999;
+        if (absA !== absB) return absA - absB;
+        return a.nama.localeCompare(b.nama);
+      });
+
+      const rankedSudah = calculateRankings(listSudah, "count");
+      cachedSortedSantri = rankedSudah;
       renderLeaderboardSantri();
-      renderTableSantri(cachedSortedSantri);
+
+      // Update Toolbar Counters
+      const countTotal = combinedList.length;
+      const countSudah = rankedSudah.length;
+      const countBelum = listBelum.length;
+
+      const elTotal = document.getElementById("countSantriTotal");
+      const elSudah = document.getElementById("countSantriSudah");
+      const elBelum = document.getElementById("countSantriBelum");
+      if (elTotal) elTotal.innerText = countTotal;
+      if (elSudah) elSudah.innerText = countSudah;
+      if (elBelum) elBelum.innerText = countBelum;
+
+      const pctSudah = countTotal > 0 ? Math.round((countSudah / countTotal) * 100) : 0;
+      const elStatSantri = document.getElementById("statSantriSummary");
+      if (elStatSantri) {
+        elStatSantri.innerText = `${countSudah} dari ${countTotal} santri sudah setor (${pctSudah}%) · ${countBelum} santri belum setor`;
+      }
+
+      allProcessedSantri = {
+        rankedSudah,
+        listBelum,
+        combined: [...rankedSudah, ...listBelum]
+      };
+
+      currentPageSantri = 1;
+      renderTableSantri();
 
       // 2. Rekap Guru (Seluruh 82 Master Ustadz + Leaderboard)
       renderTableGuru(filtered);
@@ -1614,32 +1849,77 @@
       });
     }
 
-    // Render Tabel Santri
-    function renderTableSantri(list) {
+    // Render Tabel Santri (Mendukung Filter Semua, Sudah Setor, Belum Setor & Pagination Max 25 Per Halaman)
+    function renderTableSantri() {
+      let displayList = [];
+      if (filterSantriStatus === "sudah") {
+        displayList = allProcessedSantri.rankedSudah || [];
+      } else if (filterSantriStatus === "belum") {
+        displayList = allProcessedSantri.listBelum || [];
+      } else {
+        displayList = allProcessedSantri.combined || [];
+      }
+
+      const totalItems = displayList.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE_SANTRI));
+      if (currentPageSantri > totalPages) currentPageSantri = totalPages;
+      if (currentPageSantri < 1) currentPageSantri = 1;
+
+      const startIndex = (currentPageSantri - 1) * PAGE_SIZE_SANTRI;
+      const endIndex = Math.min(startIndex + PAGE_SIZE_SANTRI, totalItems);
+      const pageList = displayList.slice(startIndex, endIndex);
+
+      // Update Pagination Controls
+      const elInfo = document.getElementById("paginationSantriInfo");
+      const elPage = document.getElementById("paginationSantriPage");
+      const btnPrev = document.getElementById("btnSantriPrev");
+      const btnNext = document.getElementById("btnSantriNext");
+
+      if (elInfo) {
+        if (totalItems === 0) {
+          elInfo.innerText = "Tidak ada data santri";
+        } else {
+          elInfo.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalItems} santri`;
+        }
+      }
+      if (elPage) elPage.innerText = `Hal ${currentPageSantri} / ${totalPages}`;
+      if (btnPrev) btnPrev.disabled = (currentPageSantri <= 1);
+      if (btnNext) btnNext.disabled = (currentPageSantri >= totalPages);
+
       const tbody = document.getElementById("bodySantri");
       tbody.innerHTML = "";
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data setoran santri</td></tr>`;
+      if (totalItems === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada santri sesuai filter</td></tr>`;
         return;
       }
 
-      list.forEach((s) => {
-        const topU = Object.entries(s.ustadzMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+      pageList.forEach((s) => {
+        const isBelum = s.status === "belum";
+        const topU = !isBelum ? (Object.entries(s.ustadzMap || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || "—") : "—";
+        const rankLabel = !isBelum ? (s.rank ? `#${s.rank}` : "—") : "—";
+        const absBadge = s.abs ? `<span class="badge-subtle me-1" style="font-size:10.5px;">Abs ${s.abs}</span>` : "";
+
         tbody.innerHTML += `
-          <tr>
-            <td class="text-muted fw-semibold">#${s.rank}</td>
+          <tr class="${isBelum ? 'opacity-75' : ''}">
+            <td class="text-muted fw-semibold">${rankLabel}</td>
             <td>
-              <div class="fw-semibold text-dark">${s.nama}</div>
-              <small class="text-muted" style="font-size:11px;">${s.stambuk}</small>
+              <div class="fw-semibold ${isBelum ? 'text-secondary' : 'text-dark'}">${absBadge}${s.nama}</div>
+              <small class="text-muted" style="font-size:11px;">Stambuk: ${s.stambuk || "—"}</small>
             </td>
             <td><span class="badge-subtle">${s.kelas}</span></td>
             <td>${s.daerah || "—"}</td>
-            <td>${topU}</td>
-            <td class="text-center"><span class="badge-subtle badge-accent fw-bold">${s.count}</span></td>
+            <td>${isBelum ? '<span class="text-muted small fst-italic">Belum setor</span>' : topU}</td>
+            <td class="text-center">
+              ${isBelum 
+                ? '<span class="badge-subtle text-muted" style="background:#f8fafc; border-color:#e2e8f0; color:#94a3b8;">Belum Setor (0)</span>' 
+                : `<span class="badge-subtle badge-accent fw-bold">${s.count} Materi</span>`
+              }
+            </td>
             <td class="text-end">
-              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailSantri('${encodeURIComponent(s.stambuk || s.nama)}')">
-                Rincian
-              </button>
+              ${isBelum
+                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>'
+                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailSantri('${encodeURIComponent(s.stambuk || s.nama)}')">Rincian</button>`
+              }
             </td>
           </tr>
         `;
@@ -1828,22 +2108,37 @@
 
       targetClasses.forEach(k => {
         const isZero = k.count === 0;
-        const avg = k.santriSet.size > 0 ? (k.count / k.santriSet.size).toFixed(1) : "0";
+        const totalSantriMasterKelas = (masterSantriPerKelas[k.kelas] || []).length;
+        const santriSetorCount = k.santriSet.size;
+        const belumSetorCount = totalSantriMasterKelas > 0 ? Math.max(0, totalSantriMasterKelas - santriSetorCount) : 0;
+        const pctPartisipasi = totalSantriMasterKelas > 0 ? Math.round((santriSetorCount / totalSantriMasterKelas) * 100) : null;
+
+        const avg = santriSetorCount > 0 ? (k.count / santriSetorCount).toFixed(1) : "0";
         const mapelEntries = Object.entries(kelasMapelCount[k.kelas] || {}).sort((a, b) => b[1] - a[1]);
         const topM = mapelEntries[0] ? `${mapelEntries[0][0]} (${mapelEntries[0][1]})` : "—";
+
+        let santriColHTML = "";
+        if (totalSantriMasterKelas > 0) {
+          santriColHTML = `
+            <div class="fw-semibold ${santriSetorCount > 0 ? 'text-dark' : 'text-muted'}">
+              ${santriSetorCount} / ${totalSantriMasterKelas} 
+              <span class="badge-subtle ${santriSetorCount > 0 ? 'badge-success' : ''}" style="font-size:10px;">${pctPartisipasi}%</span>
+            </div>
+            ${belumSetorCount > 0 ? `<small class="text-muted" style="font-size:10.5px;">${belumSetorCount} belum setor</small>` : `<small class="text-success" style="font-size:10.5px;">Lengkap 100%</small>`}
+          `;
+        } else {
+          santriColHTML = `<span class="fw-semibold ${isZero ? 'text-muted' : ''}">${santriSetorCount} santri</span>`;
+        }
 
         tbodyKelas.innerHTML += `
           <tr class="${isZero ? 'opacity-75' : ''}">
             <td class="fw-bold ${isZero ? 'text-secondary' : 'text-dark'}">${k.kelas}</td>
-            <td class="text-center ${isZero ? 'text-muted' : ''}">${k.santriSet.size}</td>
+            <td class="text-center">${santriColHTML}</td>
             <td class="text-center fw-bold ${isZero ? 'text-muted' : 'text-primary'}">${k.count}</td>
             <td class="text-center text-muted">${avg}</td>
             <td>${isZero ? '<span class="badge-subtle text-muted" style="background:#f8fafc; border-color:#e2e8f0; color:#94a3b8;">Belum ada setoran (0)</span>' : `<span class="badge-subtle">${topM}</span>`}</td>
             <td class="text-end">
-              ${isZero 
-                ? '<button disabled class="btn-action btn-secondary-action opacity-50 py-1 px-2" style="font-size:11.5px; cursor:not-allowed;">Kosong</button>' 
-                : `<button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKelas('${encodeURIComponent(k.kelas)}')">Rincian</button>`
-              }
+              <button class="btn-action btn-secondary-action py-1 px-2" style="font-size:11.5px;" onclick="showDetailKelas('${encodeURIComponent(k.kelas)}')">Rincian</button>
             </td>
           </tr>
         `;
@@ -1875,7 +2170,7 @@
         // Baris untuk Kegiatan Favorit Per Kelas
         const kegiatanEntries = Object.entries(kelasKegiatanCount[k.kelas] || {}).sort((a, b) => b[1] - a[1]);
         if (kegiatanEntries.length > 0) {
-          const topKName = kegiatanEntries[0][0];
+          const topKName = formatNamaKegiatan(kegiatanEntries[0][0]);
           const topKCount = kegiatanEntries[0][1];
           const pctK = Math.round((topKCount / k.count) * 100);
           tbodyFavKegiatan.innerHTML += `
@@ -1930,7 +2225,8 @@
         }
         mapelMap[p].count++;
         mapelMap[p].santriSet.add(r.stambuk || r.nama);
-        mapelMap[p].jenisMap[r.jenis] = (mapelMap[p].jenisMap[r.jenis] || 0) + 1;
+        const j = r.jenis || "Lainnya";
+        mapelMap[p].jenisMap[j] = (mapelMap[p].jenisMap[j] || 0) + 1;
         mapelMap[p].items.push(r);
       });
 
@@ -1983,7 +2279,8 @@
 
       displayList.forEach(m => {
         const isZero = m.count === 0;
-        const topJ = Object.entries(m.jenisMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+        const rawTopJ = Object.entries(m.jenisMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+        const topJ = rawTopJ ? formatNamaKegiatan(rawTopJ) : "—";
 
         tbodyMapel.innerHTML += `
           <tr class="${isZero ? 'opacity-75' : ''}">
@@ -2007,7 +2304,7 @@
       });
     }
 
-    // Render POV Kegiatan (Menjabarkan Seluruh 6 Kegiatan Standar)
+    // Render POV Kegiatan (Menjabarkan Seluruh 6 Kegiatan Standar dengan Nama Lengkap)
     function renderPOVKegiatan(filtered) {
       if (!filtered) filtered = latestFilteredRecords;
       const kegiatanMap = {};
@@ -2017,6 +2314,7 @@
       MASTER_KEGIATAN.forEach(j => {
         kegiatanMap[j] = {
           jenis: j,
+          label: formatNamaKegiatan(j),
           count: 0,
           santriSet: new Set(),
           mapelMap: {},
@@ -2029,6 +2327,7 @@
         if (!kegiatanMap[j]) {
           kegiatanMap[j] = {
             jenis: j,
+            label: formatNamaKegiatan(j),
             count: 0,
             santriSet: new Set(),
             mapelMap: {},
@@ -2050,7 +2349,7 @@
       const activeKegiatan = sortedKegiatan.filter(k => k.count > 0);
       if (activeKegiatan.length > 0) {
         const topKegiatanOverall = activeKegiatan[0];
-        document.getElementById("favKegiatanOverallTitle").innerText = topKegiatanOverall.jenis;
+        document.getElementById("favKegiatanOverallTitle").innerText = topKegiatanOverall.label;
         const pctKAll = totalCount > 0 ? Math.round((topKegiatanOverall.count / totalCount) * 100) : 0;
         document.getElementById("favKegiatanOverallSub").innerText = `${topKegiatanOverall.count} materi disetor (${pctKAll}% dari total kegiatan)`;
       } else {
@@ -2067,7 +2366,7 @@
 
         tbodyKegiatan.innerHTML += `
           <tr class="${isZero ? 'opacity-75' : ''}">
-            <td class="fw-semibold ${isZero ? 'text-secondary' : 'text-dark'}">${k.jenis}</td>
+            <td class="fw-semibold ${isZero ? 'text-secondary' : 'text-dark'}">${k.label}</td>
             <td class="text-center fw-bold ${isZero ? 'text-muted' : 'text-primary'}">${k.count}</td>
             <td class="text-center text-muted">${k.santriSet.size} Santri</td>
             <td class="text-center"><span class="badge-subtle ${isZero ? 'text-muted' : 'badge-success'}">${pct}%</span></td>
@@ -2181,7 +2480,7 @@
           }
         });
 
-        const kegiatanLabels = Object.keys(kegiatanCounts);
+        const kegiatanLabels = Object.keys(kegiatanCounts).map(k => formatNamaKegiatan(k));
         const kegiatanValues = Object.values(kegiatanCounts);
         const kegiatanColors = [
           "#0f766e", // Menghafal
@@ -2293,35 +2592,103 @@
       );
     };
 
-    // 3. Detail Kelas (Group by Santri - NAMA TIDAK BERULANG!)
+    // 3. Detail Kelas (Group by Santri - NAMA TIDAK BERULANG + Daftar Belum Setor)
     window.showDetailKelas = function(encodedKey) {
       const kelas = decodeURIComponent(encodedKey);
-      const itemsInKelas = flattenedRecords.filter(r => r.kelas === kelas);
+      const itemsInKelas = flattenedRecords.filter(r => normalizeKelas(r.kelas) === kelas || r.kelas === kelas);
 
       const groupMap = {};
       itemsInKelas.forEach(it => {
-        const sKey = it.stambuk || it.nama;
+        const sKey = (it.stambuk || it.nama).trim();
         if (!groupMap[sKey]) {
           groupMap[sKey] = {
             nama: it.nama,
             stambuk: it.stambuk,
             kelas: it.kelas,
+            daerah: it.daerah,
             items: []
           };
         }
         groupMap[sKey].items.push(it);
       });
 
-      const groupedData = Object.values(groupMap).map(sg => ({
-        groupTitle: sg.nama,
-        groupMeta: `Stambuk ${sg.stambuk || "—"}`,
-        countBadge: `${sg.items.length} Materi Disetor`,
-        items: sg.items
-      }));
+      // Master santri di kelas ini
+      const masterDiKelas = masterSantriPerKelas[kelas] || masterSantriList.filter(s => normalizeKelas(s.kelas) === kelas);
+      
+      // Santri yang belum setor di kelas ini
+      const belumSetorList = [];
+      masterDiKelas.forEach(m => {
+        const isSudah = Object.values(groupMap).some(s => 
+          (m.stambuk && s.stambuk === m.stambuk) || 
+          (m.nama && s.nama && m.nama.trim().toLowerCase() === s.nama.trim().toLowerCase())
+        );
+        if (!isSudah) {
+          belumSetorList.push(m);
+        }
+      });
+
+      belumSetorList.sort((a, b) => {
+        const absA = parseInt(a.abs) || 999;
+        const absB = parseInt(b.abs) || 999;
+        if (absA !== absB) return absA - absB;
+        return a.nama.localeCompare(b.nama);
+      });
+
+      const groupedData = [];
+
+      // Grup Belum Setor (jika ada) — Sangat informatif untuk Wali Kelas
+      if (belumSetorList.length > 0) {
+        const rowsBelumHTML = belumSetorList.map(s => `
+          <tr>
+            <td class="text-muted fw-semibold">${s.abs ? `#${s.abs}` : '—'}</td>
+            <td class="text-muted">${s.stambuk || '—'}</td>
+            <td class="fw-semibold text-dark">${s.nama}</td>
+            <td>${s.daerah || '—'}</td>
+            <td><span class="badge-subtle badge-warning" style="font-size:11px;">Belum Menyetor</span></td>
+          </tr>
+        `).join("");
+
+        groupedData.push({
+          groupTitle: `⚠️ Belum Setor (${belumSetorList.length} Santri)`,
+          groupMeta: `Perlu Motivasi / Setoran`,
+          countBadge: `${belumSetorList.length} Santri Belum`,
+          badgeClass: "badge-warning",
+          customTableHTML: `
+            <div class="table-container">
+              <table class="data-table" style="font-size:12px;">
+                <thead>
+                  <tr>
+                    <th style="width:50px;">Abs</th>
+                    <th>Stambuk</th>
+                    <th>Nama Santri</th>
+                    <th>Daerah / Asrama</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsBelumHTML}</tbody>
+              </table>
+            </div>
+          `
+        });
+      }
+
+      // Grup Sudah Setor
+      Object.values(groupMap).forEach(sg => {
+        groupedData.push({
+          groupTitle: `✅ ${sg.nama}`,
+          groupMeta: `Stambuk ${sg.stambuk || "—"} · ${sg.daerah || ""}`,
+          countBadge: `${sg.items.length} Materi Disetor`,
+          items: sg.items
+        });
+      });
+
+      const totalSantriMaster = masterDiKelas.length > 0 ? masterDiKelas.length : Object.keys(groupMap).length;
+      const sudahCount = Object.keys(groupMap).length;
+      const pct = totalSantriMaster > 0 ? Math.round((sudahCount / totalSantriMaster) * 100) : 0;
 
       openAccordionModal(
         `Rincian Kelas: ${kelas}`,
-        `${groupedData.length} Santri Terlibat · Total ${itemsInKelas.length} Materi Disetor`,
+        `Total ${totalSantriMaster} Santri · Sudah Setor: ${sudahCount} (${pct}%) · Belum Setor: ${belumSetorList.length} Santri · Total ${itemsInKelas.length} Butir Materi Disetor`,
         groupedData
       );
     };
@@ -2411,7 +2778,7 @@
       }
 
       openAccordionModal(
-        `Kegiatan: ${jenis} (Per ${groupBy === 'mapel' ? 'Mata Pelajaran' : 'Santri'})`,
+        `Kegiatan: ${formatNamaKegiatan(jenis)} (Per ${groupBy === 'mapel' ? 'Mata Pelajaran' : 'Santri'})`,
         `Total ${itemsInKegiatan.length} Butir Materi Disetor pada Kegiatan Ini`,
         groupedData
       );
@@ -2430,20 +2797,43 @@
         container.innerHTML = `<div class="p-4 text-center text-muted" style="font-size:13px;">Tidak ada rincian data</div>`;
       } else {
         groupedData.forEach((g, idx) => {
-          // Buka grup pertama secara default jika jumlah sedikit, sisanya tertutup
           const isInitiallyOpen = idx === 0 && groupedData.length <= 3;
           const openHeaderCls = isInitiallyOpen ? "open" : "";
           const openContentCls = isInitiallyOpen ? "open" : "";
 
-          const rowsHTML = g.items.map(it => `
-            <tr>
-              <td class="text-muted" style="white-space:nowrap; font-size:11px;">${formatDate(it.tanggal)}</td>
-              <td class="fw-semibold">${it.pelajaran || "—"}</td>
-              <td><span class="badge-subtle">${it.jenis || "—"}</span></td>
-              <td>${it.materi_judul || "—"}</td>
-              <td class="text-muted" style="font-size:11.5px;">${it.ustadz || "—"}</td>
-            </tr>
-          `).join("");
+          let contentTableHTML = "";
+          if (g.customTableHTML) {
+            contentTableHTML = g.customTableHTML;
+          } else {
+            const rowsHTML = (g.items || []).map(it => `
+              <tr>
+                <td class="text-muted" style="white-space:nowrap; font-size:11px;">${formatDate(it.tanggal)}</td>
+                <td class="fw-semibold">${it.pelajaran || "—"}</td>
+                <td><span class="badge-subtle">${formatNamaKegiatan(it.jenis) || "—"}</span></td>
+                <td>${it.materi_judul || "—"}</td>
+                <td class="text-muted" style="font-size:11.5px;">${it.ustadz || "—"}</td>
+              </tr>
+            `).join("");
+
+            contentTableHTML = `
+              <div class="table-container">
+                <table class="data-table" style="font-size:12px;">
+                  <thead>
+                    <tr>
+                      <th>Waktu</th>
+                      <th>Pelajaran</th>
+                      <th>Kegiatan</th>
+                      <th>Materi Disetor</th>
+                      <th>Penyimak</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rowsHTML}</tbody>
+                </table>
+              </div>
+            `;
+          }
+
+          const badgeClass = g.badgeClass ? `badge-subtle ${g.badgeClass} fw-bold` : "badge-subtle badge-accent fw-bold";
 
           container.innerHTML += `
             <div class="group-item">
@@ -2454,24 +2844,11 @@
                   <span class="badge-subtle" style="font-size:11px;">${g.groupMeta}</span>
                 </div>
                 <div>
-                  <span class="badge-subtle badge-accent fw-bold" style="font-size:11.5px;">${g.countBadge}</span>
+                  <span class="${badgeClass}" style="font-size:11.5px;">${g.countBadge}</span>
                 </div>
               </div>
               <div class="group-content ${openContentCls}">
-                <div class="table-container">
-                  <table class="data-table" style="font-size:12px;">
-                    <thead>
-                      <tr>
-                        <th>Waktu</th>
-                        <th>Pelajaran</th>
-                        <th>Kegiatan</th>
-                        <th>Materi Disetor</th>
-                        <th>Penyimak</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rowsHTML}</tbody>
-                  </table>
-                </div>
+                ${contentTableHTML}
               </div>
             </div>
           `;
@@ -2483,7 +2860,7 @@
 
     // Export Excel Multi-Sheet
     function exportToExcel() {
-      if (flattenedRecords.length === 0) {
+      if (flattenedRecords.length === 0 && (!allProcessedSantri.listBelum || allProcessedSantri.listBelum.length === 0)) {
         alert("Belum ada data untuk diekspor!");
         return;
       }
@@ -2513,7 +2890,7 @@
           "Ustadz Pembimbing": r.ustadz,
           "Mata Pelajaran": r.pelajaran,
           "Semester": r.semester,
-          "Jenis Kegiatan": r.jenis,
+          "Jenis Kegiatan": formatNamaKegiatan(r.jenis),
           "Materi Disetor": r.materi_judul,
           "Status": "Tuntas"
         };
@@ -2524,6 +2901,7 @@
       // Sheet 2: Leaderboard Santri
       const santriData = cachedSortedSantri.map(s => ({
         "Rank": s.rank,
+        "Abs": s.abs || "",
         "Stambuk": s.stambuk,
         "Nama Santri": s.nama,
         "Kelas": s.kelas,
@@ -2531,9 +2909,24 @@
         "Total Materi": s.count
       }));
       const wsSantri = XLSX.utils.json_to_sheet(santriData);
-      XLSX.utils.book_append_sheet(wb, wsSantri, "Leaderboard Santri");
+      XLSX.utils.book_append_sheet(wb, wsSantri, "Santri Sudah Setor");
 
-      // Sheet 3: Leaderboard Ustadz
+      // Sheet 3: Rekap Santri Belum Setor
+      if (allProcessedSantri.listBelum && allProcessedSantri.listBelum.length > 0) {
+        const belumData = allProcessedSantri.listBelum.map((s, idx) => ({
+          "No": idx + 1,
+          "Abs": s.abs || "",
+          "Stambuk": s.stambuk || "",
+          "Nama Santri": s.nama,
+          "Kelas": s.kelas,
+          "Daerah/Asrama": s.daerah || "",
+          "Status": "Belum Menyetor"
+        }));
+        const wsBelum = XLSX.utils.json_to_sheet(belumData);
+        XLSX.utils.book_append_sheet(wb, wsBelum, "Santri Belum Setor");
+      }
+
+      // Sheet 4: Leaderboard Ustadz
       const guruData = cachedSortedGuru.map(g => ({
         "Rank": g.rank,
         "Nama Ustadz": g.nama,
@@ -2553,6 +2946,35 @@
     document.getElementById("filterSemester").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterKelas").addEventListener("change", applyFiltersAndCalculate);
     document.getElementById("filterSearch").addEventListener("input", applyFiltersAndCalculate);
+
+    // Sub-Filter Santri Listener (Semua / Sudah Setor / Belum Setor)
+    document.querySelectorAll(".btn-filter-santri").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-filter-santri").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filterSantriStatus = btn.dataset.status;
+        currentPageSantri = 1;
+        renderTableSantri();
+      });
+    });
+
+    // Pagination Santri Listeners (Prev / Next)
+    const btnSantriPrev = document.getElementById("btnSantriPrev");
+    const btnSantriNext = document.getElementById("btnSantriNext");
+    if (btnSantriPrev) {
+      btnSantriPrev.addEventListener("click", () => {
+        if (currentPageSantri > 1) {
+          currentPageSantri--;
+          renderTableSantri();
+        }
+      });
+    }
+    if (btnSantriNext) {
+      btnSantriNext.addEventListener("click", () => {
+        currentPageSantri++;
+        renderTableSantri();
+      });
+    }
 
     // Sub-Filter Guru Listener
     document.querySelectorAll(".btn-filter-guru").forEach(btn => {

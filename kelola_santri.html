@@ -745,6 +745,25 @@
       });
     }
 
+    // Helper: Simpan array santri 1 kelas ke Firestore (Hanya 1 Dokumen / 1 Write!)
+    async function saveKelasMasterToFirestore(kelasName) {
+      const k = normalizeKelas(kelasName);
+      const listInKelas = masterSantriList.filter(s => s.kelas === k);
+      listInKelas.sort((a, b) => (parseInt(a.abs) || 999) - (parseInt(b.abs) || 999) || a.nama.localeCompare(b.nama));
+      const docRef = doc(db, "santri_master", k);
+      await setDoc(docRef, {
+        kelas: k,
+        updated_at: new Date().toISOString(),
+        total_santri: listInKelas.length,
+        santri: listInKelas.map(s => ({
+          abs: s.abs || "",
+          stambuk: s.stambuk || "",
+          nama: s.nama || "",
+          daerah: s.daerah || ""
+        }))
+      });
+    }
+
     // Tambah Santri Tunggal
     document.getElementById("formTambahSantri").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -765,20 +784,19 @@
         daerah
       };
 
-      // Simpan ke Firestore
       try {
-        const docRef = doc(db, "santri_master", stambuk);
-        await setDoc(docRef, newSantri);
-
         masterSantriList = masterSantriList.filter(x => x.stambuk !== stambuk);
         masterSantriList.push(newSantri);
         sortMasterList();
+
+        // Simpan 1 dokumen kelas ke Firestore (1 write saja)
+        await saveKelasMasterToFirestore(kelas);
         localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
 
         document.getElementById("formTambahSantri").reset();
         renderTabel();
         updateMetrics();
-        alert(`Santri ${nama} (${kelas}) berhasil ditambahkan ke Firebase!`);
+        alert(`Santri ${nama} (${kelas}) berhasil disimpan ke dokumen kelas di Firebase!`);
       } catch (err) {
         alert("Gagal menambahkan santri: " + err.message);
       }
@@ -821,17 +839,17 @@
       };
 
       try {
-        const docRef = doc(db, "santri_master", stambuk);
-        await setDoc(docRef, updated);
-
-        // Jika stambuk berubah, hapus dokumen lama
-        if (id && id !== stambuk) {
-          await deleteDoc(doc(db, "santri_master", id));
-        }
-
         const idx = masterSantriList.findIndex(s => s.id === id || s.stambuk === id);
+        const oldKelas = idx !== -1 ? masterSantriList[idx].kelas : kelas;
+
         if (idx !== -1) masterSantriList[idx] = updated;
         else masterSantriList.push(updated);
+
+        // Update dokumen kelas (dan dokumen kelas lama jika kelasnya dipindah)
+        await saveKelasMasterToFirestore(kelas);
+        if (oldKelas && oldKelas !== kelas) {
+          await saveKelasMasterToFirestore(oldKelas);
+        }
 
         sortMasterList();
         localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
@@ -853,8 +871,9 @@
 
       if (confirm(`Yakin ingin menghapus ${found.nama} (${found.kelas}) dari master santri?`)) {
         try {
-          await deleteDoc(doc(db, "santri_master", found.stambuk || found.id));
+          const targetKelas = found.kelas;
           masterSantriList = masterSantriList.filter(s => s.id !== id && s.stambuk !== id);
+          await saveKelasMasterToFirestore(targetKelas);
           localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
           renderTabel();
           updateMetrics();
@@ -894,9 +913,8 @@
               daerah: parts[4] || ""
             });
           } else {
-            // Format 4 kolom: Stambuk | Nama | Kelas | Daerah ATAU Abs | Stambuk | Nama | Kelas
+            // Format 4 kolom
             if (parts[0].length > 3 && !isNaN(parts[0])) {
-              // parts[0] adalah stambuk
               parsed.push({
                 abs: "",
                 stambuk: parts[0],
@@ -905,7 +923,6 @@
                 daerah: parts[3] || ""
               });
             } else {
-              // parts[0] adalah absen
               parsed.push({
                 abs: parseInt(parts[0]) || "",
                 stambuk: parts[1],
@@ -954,7 +971,7 @@
       previewArea.style.display = "block";
     });
 
-    // Proses Import Massal ke Firebase dengan Batch
+    // Proses Import Massal ke Firebase (Dikelompokkan Per Dokumen Kelas: Hanya 18 Writes Total!)
     document.getElementById("btnProsesImport").addEventListener("click", async () => {
       const text = document.getElementById("textareaImport").value.trim();
       const parsed = parseImportText(text);
@@ -966,26 +983,66 @@
 
       const btn = document.getElementById("btnProsesImport");
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan ke Cloud...`;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan 18 Dokumen Kelas...`;
 
       try {
-        // Firestore batch max 500 writes, kita chunk per 400 dokumen
-        const CHUNK_SIZE = 400;
-        for (let i = 0; i < parsed.length; i += CHUNK_SIZE) {
-          const chunk = parsed.slice(i, i + CHUNK_SIZE);
-          const batch = writeBatch(db);
-          chunk.forEach(s => {
-            const docRef = doc(db, "santri_master", s.stambuk);
-            batch.set(docRef, { ...s, id: s.stambuk });
+        // Kelompokkan santri per kelas (5B s/d 5S)
+        const perKelasMap = {};
+        KELAS_LIST.forEach(k => { perKelasMap[k] = []; });
 
-            // Update local memory
-            const idx = masterSantriList.findIndex(x => x.stambuk === s.stambuk);
-            if (idx !== -1) masterSantriList[idx] = { ...s, id: s.stambuk };
-            else masterSantriList.push({ ...s, id: s.stambuk });
+        // Masukkan data santri existing dari kelas yang tidak di-overwrite atau merge
+        masterSantriList.forEach(s => {
+          const k = normalizeKelas(s.kelas);
+          if (!perKelasMap[k]) perKelasMap[k] = [];
+          perKelasMap[k].push({
+            abs: s.abs || "",
+            stambuk: s.stambuk || "",
+            nama: s.nama || "",
+            daerah: s.daerah || ""
           });
-          await batch.commit();
-        }
+        });
 
+        // Merge santri baru yang di-paste
+        parsed.forEach(s => {
+          const k = normalizeKelas(s.kelas);
+          if (!perKelasMap[k]) perKelasMap[k] = [];
+          const idx = perKelasMap[k].findIndex(x => x.stambuk === s.stambuk || (x.nama === s.nama && x.abs === s.abs));
+          const sClean = {
+            abs: s.abs || "",
+            stambuk: s.stambuk || "",
+            nama: s.nama || "",
+            daerah: s.daerah || ""
+          };
+          if (idx !== -1) perKelasMap[k][idx] = sClean;
+          else perKelasMap[k].push(sClean);
+        });
+
+        // Simpan 1 dokumen per kelas via Batch (Hanya maksimal 18 dokumen/writes!)
+        const batch = writeBatch(db);
+        let updatedMasterList = [];
+
+        Object.entries(perKelasMap).forEach(([k, listSantri]) => {
+          listSantri.sort((a, b) => (parseInt(a.abs) || 999) - (parseInt(b.abs) || 999) || a.nama.localeCompare(b.nama));
+          const docRef = doc(db, "santri_master", k);
+          batch.set(docRef, {
+            kelas: k,
+            updated_at: new Date().toISOString(),
+            total_santri: listSantri.length,
+            santri: listSantri
+          });
+
+          listSantri.forEach(s => {
+            updatedMasterList.push({
+              id: s.stambuk || `${k}_${s.nama}`,
+              ...s,
+              kelas: k
+            });
+          });
+        });
+
+        await batch.commit();
+
+        masterSantriList = updatedMasterList;
         sortMasterList();
         localStorage.setItem("muwajah_santri_master_cache", JSON.stringify(masterSantriList));
 
@@ -995,7 +1052,7 @@
 
         renderTabel();
         updateMetrics();
-        alert(`Berhasil menyimpan ${parsed.length} data santri ke Cloud Firebase!`);
+        alert(`Berhasil menyimpan ${parsed.length} santri ke Firebase! Disimpan hemat dalam format 18 dokumen kelas.`);
       } catch (err) {
         console.error("Gagal import massal:", err);
         alert("Gagal menyimpan ke Firebase: " + err.message);

@@ -1,4 +1,4 @@
-const CACHE_NAME = "muwajjah-tracker-v9";
+const CACHE_NAME = "muwajjah-tracker-v10";
 const urlsToCache = [
   "./",
   "./index.html",
